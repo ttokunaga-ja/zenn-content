@@ -57,7 +57,16 @@ Week 1（日本出発〜インターン初週）は、技術的なアウトプ�
 ## 今週のスナップショット（写真）
 
 ![日本出国直前の様子](/images/india-internship-week-1/1.jpg)
+*日本出国直前の様子*
+
 ![１か月滞在したホテルの部屋](/images/india-internship-week-1/2.jpg)
+*１か月滞在したホテルの部屋*
+
 ![ショッピングモールもフードコートで食べた激辛ビリヤニ](/images/india-internship-week-1/3.jpg)
+*ショッピングモールもフードコートで食べた激辛ビリヤニ*
+
 ![Sasken オフィス前で 8 人のメンバーと記念撮影](/images/india-internship-week-1/4.jpg)
+*Sasken オフィス前で 8 人のメンバーと記念撮影*
+
 ![Sasken 様が用意してくれた３つ星ホテルの弁当](/images/india-internship-week-1/5.jpg)
+*Sasken 様が用意してくれた３つ星ホテルの弁当*

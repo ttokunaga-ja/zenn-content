@@ -75,12 +75,31 @@ Week 4 は、技術的な成果以上に、「自分の現在地を知る」1 �
 ## 今週のスナップショット（写真）
 
 ![Sasken 様からいただいたお土産を受け取ったときの一枚](/images/india-internship-week-4/1.jpg)
+*Sasken 様からいただいたお土産を受け取ったときの一枚*
+
 ![会社のバルコニーから眺めたベンガルールの景色](/images/india-internship-week-4/2.jpg)
+*会社のバルコニーから眺めたベンガルールの景色*
+
 ![社員食堂で食べたカレーのランチ](/images/india-internship-week-4/3.jpg)
+*社員食堂で食べたカレーのランチ*
+
 ![近所の高級レストランで食べた 700 ルピーの夕食](/images/india-internship-week-4/4.jpg)
+*近所の高級レストランで食べた 700 ルピーの夕食*
+
 ![近々オープン予定の UNIQLO 店舗を見つけたときの写真](/images/india-internship-week-4/5.jpg)
+*近々オープン予定の UNIQLO 店舗を見つけたときの写真*
+
 ![夜のベンガルールの街並み](/images/india-internship-week-4/6.jpg)
+*夜のベンガルールの街並み*
+
 ![街歩きで出会った放し飼いの牛](/images/india-internship-week-4/7.jpg)
+*街歩きで出会った放し飼いの牛*
+
 ![治安の悪さで有名な KR マーケットの様子](/images/india-internship-week-4/8.jpg)
+*治安の悪さで有名な KR マーケットの様子*
+
 ![KR マーケット近くで Uber を待っているときの一枚](/images/india-internship-week-4/9.jpg)
+*KR マーケット近くで Uber を待っているときの一枚*
+
 ![成田から伊丹へ戻るフライトの機窓](/images/india-internship-week-4/10.jpg)
+*成田から伊丹へ戻るフライトの機窓*

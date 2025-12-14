@@ -65,7 +65,16 @@ Week 2 は、理論で学んだ AI/ML の知識を、実際のコードとして
 ## 今週のスナップショット（写真）
 
 ![独立記念日の朝、オフィスでの国旗掲揚セレモニー](/images/india-internship-week-2/1.jpg)
+*独立記念日の朝、オフィスでの国旗掲揚セレモニー*
+
 ![社員の人に案内してもらった市内の人気レストラン](/images/india-internship-week-2/2.jpg)
+*社員の人に案内してもらった市内の人気レストラン*
+
 ![ホテル付近の風景](/images/india-internship-week-2/3.jpg)
+*ホテル付近の風景*
+
 ![週末にメンバーと電車に乗った時の様子](/images/india-internship-week-2/4.jpg)
+*週末にメンバーと電車に乗った時の様子*
+
 ![ショッピングモールのゲームセンターのスナップ](/images/india-internship-week-2/5.jpg)
+*ショッピングモールのゲームセンターのスナップ*

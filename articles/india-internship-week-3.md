@@ -61,7 +61,16 @@ Week 3 は、技術的にも精神的にも大きな壁にぶつかった 1 週�
 ## 今週のスナップショット（写真）
 
 ![道中の休憩スポットで食べた出来たてのドーサ](/images/india-internship-week-3/1.jpg)
+*道中の休憩スポットで食べた出来たてのドーサ*
+
 ![Mysore の車の博物館で撮影したクラシックカー](/images/india-internship-week-3/2.jpg)
+*Mysore の車の博物館で撮影したクラシックカー*
+
 ![山の上の寺院へ向かう途中で眺めた街の全景](/images/india-internship-week-3/3.jpg)
+*山の上の寺院へ向かう途中で眺めた街の全景*
+
 ![寺院で 8 人揃って記念撮影](/images/india-internship-week-3/4.jpg)
+*寺院で 8 人揃って記念撮影*
+
 ![ホテルに戻って開いたピザパーティーの様子](/images/india-internship-week-3/5.jpg)
+*ホテルに戻って開いたピザパーティーの様子*
