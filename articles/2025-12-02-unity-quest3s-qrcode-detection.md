@@ -20,9 +20,13 @@ Unity と Meta Quest 3S で QR コード検出を安定して扱うための実�
 - XR Management: 4.5.3 (`com.unity.xr.management`)
 - Input System: 1.14.2 (`com.unity.inputsystem`)
 
-> 参考: これらのバージョンは `ProjectSettings/ProjectVersion.txt` と `Packages/manifest.json` に基づきます。
-
 ---
+
+## 動作デモ
+
+実際の実装による QR コードの検出と、オブジェクトの追従安定性を以下の動画で確認できます。
+
+https://youtube.com/shorts/O7ZifwF6uCc
 
 ## この記事でやること / やらないこと
 
