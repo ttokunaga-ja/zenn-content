@@ -3,7 +3,7 @@ title: "VS Code で main からブランチを安全に切る最小手順"
 emoji: "🌱"
 type: "tech"
 topics: ["Git", "VSCode"]
-published: false
+published: true
 ---
 
 VS Code で main を元にブランチを作るときの最短ルートと、事故を防ぐための注意点をまとめました。画像はすべて VS Code のステータスバーを使った操作です。

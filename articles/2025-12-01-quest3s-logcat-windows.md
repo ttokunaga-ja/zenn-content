@@ -3,7 +3,7 @@ title: "WindowsでQuest 3Sのログを取得する方法（adb + logcat）"
 emoji: "🪛"
 type: "tech"
 topics: ["Quest", "VR", "adb", "logcat", "Windows"]
-published: false
+published: true
 ---
 
 Unity や VR アプリ開発で Quest 3S の動作ログを取りたいときは、`adb logcat` が手軽です。ここでは **Windows 環境で Platform Tools をセットアップし、adb を使って Quest のログを取得する手順** をまとめます。
