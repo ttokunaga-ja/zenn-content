@@ -8,7 +8,7 @@ published: true
 
 大学の研究室やゼミのプロジェクト開発では、メンバーの入れ替わりが激しく、かつ「誰がどの実験コードを書いたか」という**個人単位の進捗管理**が重要になります。
 
-ここでは、役割分担（プログラマ・モデラ・映像など）がある**10人規模**を想定し、**視認性**と**管理のしやすさ**を両立するブランチ命名規則を提案します。
+ここでは、役割分担（プログラマ・インフラなど）がある**10人規模**を想定し、**視認性**と**管理のしやすさ**を両立するブランチ命名規則を提案します。
 
 ---
 
@@ -28,7 +28,7 @@ published: true
 
 ---
 
-## 班名プリフィックス（例：5班）
+## 班名プリフィックス（例：3班）
 
 プロジェクト内で班名（責任範囲）を固定し、先頭に付けます。
 
@@ -38,15 +38,9 @@ published: true
 - `gamesystem/`：ゲーム要素・UI（リズムロジック、スタミナ、順位、掲示板、カメラなど）
   - `gamesystem/sato/rhythm-logic-test`
   - `gamesystem/sato/ranking-ui-setup`
-- `model/`：モデラ（馬・背景・施設などのアセット）
-  - `model/takahashi/training-center-main`
-  - `model/kato/horse-variant-v2`
-- `communication/`：通信インフラ（認証、同期、再接続、サーバー連携）
-  - `communication/suzuki/server-auth-fix`
-  - `communication/suzuki/api-reconnect-logic`
-- `movie/`：映像制作（OP/ED、演出、コース紹介など）
-  - `movie/nakamura/intro-movie-draft`
-  - `movie/nakamura/winning-run-cinematic`
+- `infra/`：インフラ（認証、同期、再接続、サーバー連携、監視など）
+  - `infra/suzuki/server-auth-fix`
+  - `infra/suzuki/api-reconnect-logic`
 
 ---
 
@@ -54,7 +48,7 @@ published: true
 
 :::message
 **メリット**
-- `input/` や `model/` を開くだけで、班ごとの作業が一覧できる
+- `input/` や `infra/` を開くだけで、班ごとの作業が一覧できる
 - `main` など重要ブランチと、個人作業ブランチが混ざりにくい
 - 「どの班の、誰に聞けばよいか」がブランチ名だけで分かる
 :::
@@ -95,14 +89,12 @@ Windows（大文字小文字を区別しない）とMac/Linux（区別する）�
 **班名コード:**
 - `input/` : 馬の入力操作、アニメーション関連
 - `gamesystem/` : ゲームロジック、UI、カメラ関連
-- `model/` : 3Dモデル、背景アセット関連
-- `communication/` : 通信、サーバーインフラ関連
-- `movie/` : 映像作成、演出関連
+- `infra/` : インフラ、サーバー連携、通信・同期関連
 
 **作成例:**
 - `input/yamada/horse-run-animation`
 - `gamesystem/sato/rhythm-game-logic`
-- `model/tanaka/training-center-v1`
+- `infra/tanaka/server-deploy-script`
 ```
 
 ---
