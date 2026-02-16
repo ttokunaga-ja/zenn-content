@@ -1,0 +1,113 @@
+---
+title: "大学の研究室向け：10人以上のチーム開発を支えるGitブランチ命名規則"
+emoji: "🔬"
+type: "tech"
+topics: ["git", "github", "チーム開発", "研究室", "マネジメント"]
+published: true
+---
+
+大学の研究室やゼミのプロジェクト開発では、メンバーの入れ替わりが激しく、かつ「誰がどの実験コードを書いたか」という**個人単位の進捗管理**が重要になります。
+
+ここでは、役割分担（プログラマ・モデラ・映像など）がある**10人規模**を想定し、**視認性**と**管理のしやすさ**を両立するブランチ命名規則を提案します。
+
+---
+
+## 結論：ブランチ名は3段構成にする
+
+基本ルールはこれだけです。
+
+```text
+[班名]/[個人名]/[タスク内容]
+```
+
+### ルール（最低限）
+
+1. **すべて小文字（lowercase）**（OS差分による事故を防ぐ）
+2. **区切りはスラッシュ `/`**（GUIでフォルダ表示され、一覧性が上がる）
+3. **単語区切りはハイフン `-`**（`kebab-case`）
+
+---
+
+## 班名プリフィックス（例：5班）
+
+プロジェクト内で班名（責任範囲）を固定し、先頭に付けます。
+
+- `input/`：馬の操作・挙動（入力、振動、走行アニメ、リズム連動など）
+  - `input/tanaka/horse-vibration`
+  - `input/tanaka/horse-anim-run-v1`
+- `gamesystem/`：ゲーム要素・UI（リズムロジック、スタミナ、順位、掲示板、カメラなど）
+  - `gamesystem/sato/rhythm-logic-test`
+  - `gamesystem/sato/ranking-ui-setup`
+- `model/`：モデラ（馬・背景・施設などのアセット）
+  - `model/takahashi/training-center-main`
+  - `model/kato/horse-variant-v2`
+- `communication/`：通信インフラ（認証、同期、再接続、サーバー連携）
+  - `communication/suzuki/server-auth-fix`
+  - `communication/suzuki/api-reconnect-logic`
+- `movie/`：映像制作（OP/ED、演出、コース紹介など）
+  - `movie/nakamura/intro-movie-draft`
+  - `movie/nakamura/winning-run-cinematic`
+
+---
+
+## なぜ「班名 → 個人名」の順なのか
+
+:::message
+**メリット**
+- `input/` や `model/` を開くだけで、班ごとの作業が一覧できる
+- `main` など重要ブランチと、個人作業ブランチが混ざりにくい
+- 「どの班の、誰に聞けばよいか」がブランチ名だけで分かる
+:::
+
+研究室では、引き継ぎ・評価・論文作業などで「担当者の特定」が頻繁に発生します。ブランチ名に**責任範囲（班）**と**責任者（個人）**を固定で入れるのが効きます。
+
+---
+
+## 技術的な注意点（事故りやすいところ）
+
+### 大文字小文字を混ぜない
+
+Windows（大文字小文字を区別しない）とMac/Linux（区別する）が混在すると、`GameSystem/` と `gamesystem/` が混ざった時点で、**ブランチ切替が破綻**することがあります。
+
+:::message alert
+開始時に「ブランチ名はすべて小文字」を強く周知するのがおすすめです。
+:::
+
+### マージ済みブランチを放置しない
+
+個人ブランチが乱立しやすいので、運用をどちらかに寄せます。
+
+- 原則：**マージしたら削除**
+- 卒業・プロジェクト終了：必要なら `archive/` へ移動して保管
+
+---
+
+## 配布用テンプレ（README貼り付け用）
+
+```markdown
+### 🌿 Gitブランチ命名ルール
+
+各自、以下のフォーマットでブランチを作成してください。
+
+**形式:** `[班名]/[個人名]/[作業内容]`
+※すべて英小文字、単語区切りはハイフン(-)
+
+**班名コード:**
+- `input/` : 馬の入力操作、アニメーション関連
+- `gamesystem/` : ゲームロジック、UI、カメラ関連
+- `model/` : 3Dモデル、背景アセット関連
+- `communication/` : 通信、サーバーインフラ関連
+- `movie/` : 映像作成、演出関連
+
+**作成例:**
+- `input/yamada/horse-run-animation`
+- `gamesystem/sato/rhythm-game-logic`
+- `model/tanaka/training-center-v1`
+```
+
+---
+
+:::details 参考文献
+- https://docs.github.com/ja/get-started/using-github/github-flow
+- https://nvie.com/posts/a-successful-git-branching-model/
+:::
