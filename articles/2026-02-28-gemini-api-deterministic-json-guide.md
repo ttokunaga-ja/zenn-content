@@ -2,7 +2,7 @@
 title: "Gemini APIで出力を固定化し、綺麗なJSON配列を取得する完全ガイド"
 emoji: "🎲"
 type: "tech"
-topics:["gemini", "api", "json", "llm", "googlecloud"]
+topics: ["gemini", "api", "json", "llm", "googlecloud"]
 published: true
 ---
 ```
