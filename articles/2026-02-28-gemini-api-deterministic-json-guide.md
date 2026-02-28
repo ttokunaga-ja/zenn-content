@@ -5,7 +5,6 @@ type: "tech"
 topics: ["gemini", "api", "json", "llm", "googlecloud"]
 published: true
 ---
-```
 
 LLM（大規模言語モデル）のAPIをシステムに組み込む際、多くの開発者が直面する壁があります。それは**「LLMの出力が毎回変わってしまうこと」**と**「余計な挨拶文が含まれてプログラムでパース（解析）できないこと」**です。
 
