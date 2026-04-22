@@ -14,23 +14,23 @@ VS Code で main を元にブランチを作るときの最短ルートと、事
 
 1. **必ず先に Pull して最新化**  
    ソース管理ビューやコマンドパレットから `Git: Pull` を実行し、手元の main をリモートと揃えます。  
-   ![Git Pull で最新化](/images/git-branch-splitting/1.png)
+   ![Git Pull で最新化](/images/2025-12-25-git-branch-splitting/1.png)
 
 2. **左下が `main` になっていることを確認しクリック**  
    ここを押してブランチメニューを開きます。  
-   ![現在のブランチが main か確認](/images/git-branch-splitting/2.png)
+   ![現在のブランチが main か確認](/images/2025-12-25-git-branch-splitting/2.png)
 
 3. **メニューで「Create new branch...」を選ぶ**  
-   ![Create new branch を選択](/images/git-branch-splitting/3.png)
+   ![Create new branch を選択](/images/2025-12-25-git-branch-splitting/3.png)
 
 4. **ブランチ名を入力する**（例: `feature/update-docs`）  
-   ![ブランチ名を入力](/images/git-branch-splitting/4.png)
+   ![ブランチ名を入力](/images/2025-12-25-git-branch-splitting/4.png)
 
 5. **Enter で確定する**  
-   ![Enter で確定](/images/git-branch-splitting/5.png)
+   ![Enter で確定](/images/2025-12-25-git-branch-splitting/5.png)
 
 6. **左下の表示が新しいブランチ名に変わったら完了**  
-   ![新しいブランチ名に変わったことを確認](/images/git-branch-splitting/6.png)
+   ![新しいブランチ名に変わったことを確認](/images/2025-12-25-git-branch-splitting/6.png)
 
 ---
 
