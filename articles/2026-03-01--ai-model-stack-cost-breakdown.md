@@ -2,7 +2,7 @@
 title: "個人開発のAI API利用構成と今月の課金額を公開する（サブスク＋API連携）"
 emoji: "💸"
 type: "tech"
-topics:["ai", "chatgpt", "claude", "gemini", "個人開発"]
+topics: ["ai", "chatgpt", "claude", "gemini", "個人開発"]
 published: true
 ---
 
