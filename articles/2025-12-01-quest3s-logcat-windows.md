@@ -24,7 +24,7 @@ Unity や VR アプリ開発で Quest 3S の動作ログを取りたいときは
 2. 展開先フォルダを `C:\platform-tools` に変更  
 3. 展開したフォルダの中に `adb.exe` があることを確認
 
-![ZIP 展開後のフォルダ構成](/images/quest3s-logcat-windows/1.jpg)
+![ZIP 展開後のフォルダ構成](/images/2025-12-01-quest3s-logcat-windows/1.jpg)
 *ZIP 展開後のフォルダ構成*
 
 ### 3. 環境変数 PATH に追加
