@@ -3,7 +3,7 @@ title: "AI Agent時代にローカルファイルシステムを再設計する:
 emoji: "🗂️"
 type: "tech"
 topics: ["ai", "agent", "filesystem", "knowledge", "kcs"]
-published: true
+published: false
 ---
 
 AI Agentを使っていると、モデルの賢さに驚く一方で、かなり早い段階で別の壁にぶつかります。
