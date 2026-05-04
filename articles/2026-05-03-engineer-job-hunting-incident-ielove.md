@@ -3,7 +3,7 @@ title: "新規プロダクトを作りたいエンジニア就活生が、イン
 emoji: "🧯"
 type: "idea"
 topics: ["就活", "エンジニア就活", "セキュリティ", "SaaS", "キャリア"]
-published: true
+published: false
 ---
 
 ## はじめに
