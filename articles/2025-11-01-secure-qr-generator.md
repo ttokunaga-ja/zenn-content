@@ -26,9 +26,9 @@ GitHub リポジトリ: [ttokunaga-ja/QR_Code_Generator](https://github.com/ttok
 
 開発にあたり、以下の 4 つを重視しました。
 
-- **フロントエンド中心の構成**: `frontend/` に React + Vite アプリを集約し、Cloudflare Pages でビルド・配信する。
+- **フロントエンド中心の構成**: React + Vite アプリをリポジトリルートに配置し、Cloudflare Pages でビルド・配信する。
 - **静的配信のみ**: 実行時にサーバーへ入力を送らない。QRコード生成はブラウザ内で完結させ、公開側は静的ファイル配信に徹する。
-- **再現性の保証**: `frontend/package-lock.json` と `npm run build` を基準にし、ローカルでも Cloudflare Pages でも同じ `build/` を生成できるようにする。
+- **再現性の保証**: ルートの `package-lock.json` と `npm run build` を基準にし、ローカルでも Cloudflare Pages でも同じ `build/` を生成できるようにする。
 - **運用の簡素化**: GitHub の `main` ブランチへの push を起点に Cloudflare Pages へ自動デプロイし、カスタムドメイン `qr.takumi-tokunaga.com` で公開する。
 
 ## アーキテクチャの概要
@@ -37,7 +37,7 @@ GitHub リポジトリ: [ttokunaga-ja/QR_Code_Generator](https://github.com/ttok
 
 ```text
 ┌────────────┐   ビルド   ┌───────────────┐
-│ React + Vite │─────────▶│ /frontend/build │
+│ React + Vite │─────────▶│ /build         │
 └────────────┘            └───────────────┘
        ▲                                 │
        │ MUI, i18next, qrcode            ▼
@@ -57,7 +57,7 @@ QRコードの描画には `QRCode.toCanvas` を用いて、ブラウザの DOM 
 
 ### 配信基盤
 公開版は **Cloudflare Pages** で配信します。
-`frontend/` をビルドして生成される `build/` をそのまま公開し、入力値を受け取る API は用意しません。
+リポジトリルートをビルドして生成される `build/` をそのまま公開し、入力値を受け取る API は用意しません。
 
 ### インフラ
 GitHub の `main` ブランチに push すると Cloudflare Pages が `npm run build` を実行し、`build/` を公開します。カスタムドメインとして [https://qr.takumi-tokunaga.com/](https://qr.takumi-tokunaga.com/) を割り当てています。
@@ -67,7 +67,7 @@ GitHub の `main` ブランチに push すると Cloudflare Pages が `npm run b
 ### ブラウザ内での QR 生成
 入力イベントをトリガーに、ライブラリを用いて即時描画を行っています。
 
-```tsx:frontend/src/components/QRGeneratorApp.tsx
+```tsx:src/components/QRGeneratorApp.tsx
 const wifiString = `WIFI:T:${encryption};S:${ssid};P:${password};H:false;;`;
 await QRCode.toCanvas(canvasRef.current, wifiString, {
   width: qrSize,
@@ -99,7 +99,6 @@ Cloudflare Pages で静的ファイルとして配信するため、アプリ側
 ### ローカルビルド
 
 ```bash
-cd frontend
 npm ci
 npm run build
 ```
@@ -108,10 +107,10 @@ Vite が `build/` を生成し、その中身が Cloudflare Pages で配信さ�
 
 ### Cloudflare Pages での公開
 
-公開版は Cloudflare Pages で配信しています。`frontend/` をビルドし、生成された `build/` ディレクトリを静的サイトとして公開する構成です。
+公開版は Cloudflare Pages で配信しています。リポジトリルートをビルドし、生成された `build/` ディレクトリを静的サイトとして公開する構成です。
 
 - Production branch: `main`
-- Root directory: `frontend`
+- Root directory: 空欄（リポジトリルート）
 - Build command: `npm run build`
 - Build output directory: `build`
 - Node.js: `20`
