@@ -10,7 +10,9 @@ published: true
 
 この課題を解決するため、「ブラウザ内で生成が完結し、サーバー側には一切データを送らない」構成の QR コード生成ツールを開発しました。本記事では、そのアーキテクチャと実装のポイントを紹介します。
 
-GitHub リポジトリ: [ttokunaga-jp/QR_Code_Generator](https://github.com/ttokunaga-jp/QR_Code_Generator)
+公開URL: [https://qr.takumi-tokunaga.com/](https://qr.takumi-tokunaga.com/)
+
+GitHub リポジトリ: [ttokunaga-ja/QR_Code_Generator](https://github.com/ttokunaga-ja/QR_Code_Generator)
 
 ## なぜこのリポジトリを作ったのか
 
@@ -110,6 +112,19 @@ Dockerfile 内で以下のプロセスを完結させています。
 
 これにより、攻撃面（Attack Surface）を最小限に抑えた実行環境が構築されます。
 
+### Cloudflare Pages での公開
+
+公開版は Cloudflare Pages で配信しています。`frontend/` をビルドし、生成された `build/` ディレクトリを静的サイトとして公開する構成です。
+
+- Production branch: `main`
+- Root directory: `frontend`
+- Build command: `npm run build`
+- Build output directory: `build`
+- Node.js: `20`
+- Custom domain: [https://qr.takumi-tokunaga.com/](https://qr.takumi-tokunaga.com/)
+
+入力値を受け取るAPIを用意せず、静的ファイルとして公開できる点は、このツールの設計と相性がよいと感じています。
+
 ## セキュリティ観点でのまとめ
 
 - **データの局所性**: 入力値はブラウザから外に出ません。
@@ -130,3 +145,8 @@ Dockerfile 内で以下のプロセスを完結させています。
 
 :::details 実装の検証状況（2025-12-01）
 ローカル環境および Docker コンテナ上にて、Wi-Fi モード・URL モード双方の生成・ダウンロード機能が正常に動作することを確認済みです。
+:::
+
+:::details 公開版の検証状況（2026-06-05）
+Cloudflare Pages 上で [https://qr.takumi-tokunaga.com/](https://qr.takumi-tokunaga.com/) が HTTP 200 を返し、公開ページとして表示できることを確認済みです。
+:::
