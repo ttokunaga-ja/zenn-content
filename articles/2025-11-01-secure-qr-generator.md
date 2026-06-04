@@ -1,8 +1,8 @@
 ---
-title: "機密情報を守る：React + Go で作る「完全クライアント完結型」QRコード生成器"
+title: "機密情報を守る：React + MUI + Cloudflare Pages で作る「完全クライアント完結型」QRコード生成器"
 emoji: "🔒"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ["react", "go", "docker", "typescript", "security"]
+topics: ["react", "mui", "cloudflare", "typescript", "security"]
 published: true
 ---
 
@@ -20,16 +20,16 @@ GitHub リポジトリ: [ttokunaga-ja/QR_Code_Generator](https://github.com/ttok
 
 1. **プライバシーの担保**: Wi-Fi のパスワードや機密性の高い URL を外部サーバーに送信したくない。
 2. **静的アセットの配布**: 実行時にサーバーサイドのロジックを必要とせず、ビルド済みの静的ファイルのみを配信する構成にしたい。
-3. **セルフホストの容易さ**: Docker 一つでどこでも安全に動かせるようにしたい。
+3. **公開・運用の容易さ**: GitHub と Cloudflare Pages を使い、静的サイトとしてすぐ公開できるようにしたい。
 
 ## 最初に決めた開発方針
 
-開発にあたり、以下の 4 つのポリシーを策定しました。
+開発にあたり、以下の 4 つを重視しました。
 
-- **ミニマル構成**: `frontend/` と `backend/` のシンプルなディレクトリ構成を維持。
-- **静的配信のみ**: 実行時にサーバーへ入力を送らない。Go サーバーは単なる配信基盤として機能させる。
-- **再現性の保証**: `Makefile` と Docker マルチステージビルドを活用し、環境に依存せず同じ成果物を得られるようにする。
-- **運用の簡素化**: `docker-compose.yml` でプロキシ設定などを切り替え可能にし、CI/CD への組み込みを容易にする。
+- **フロントエンド中心の構成**: `frontend/` に React + Vite アプリを集約し、Cloudflare Pages でビルド・配信する。
+- **静的配信のみ**: 実行時にサーバーへ入力を送らない。QRコード生成はブラウザ内で完結させ、公開側は静的ファイル配信に徹する。
+- **再現性の保証**: `frontend/package-lock.json` と `npm run build` を基準にし、ローカルでも Cloudflare Pages でも同じ `build/` を生成できるようにする。
+- **運用の簡素化**: GitHub の `main` ブランチへの push を起点に Cloudflare Pages へ自動デプロイし、カスタムドメイン `qr.takumi-tokunaga.com` で公開する。
 
 ## アーキテクチャの概要
 
@@ -40,27 +40,27 @@ GitHub リポジトリ: [ttokunaga-ja/QR_Code_Generator](https://github.com/ttok
 │ React + Vite │─────────▶│ /frontend/build │
 └────────────┘            └───────────────┘
        ▲                                 │
-       │ i18next, Tailwind               │ STATIC_DIR=/app/build
-       │                                 ▼
-┌────────────┐   go build  ┌───────────────┐
-│  Go server  │───────────▶│ /server (bin) │
-└────────────┘            └───────────────┘
-                                    │
-                             Docker multi-stage
-                                    │
-                               alpine runtime
+       │ MUI, i18next, qrcode            ▼
+       │                         ┌──────────────────┐
+       └─────────────────────────│ Cloudflare Pages │
+                                 └──────────────────┘
+                                          │
+                                          ▼
+                            https://qr.takumi-tokunaga.com/
 ```
 
 ### フロントエンド
-**React + TypeScript + Vite** を採用。
-`QRCode.toCanvas` を用いて、ブラウザの DOM 内で直接 QR コードを描画します。i18next による日英切り替えにも対応しています。
+**React + TypeScript + Vite + MUI** を採用。
+MUI の `ThemeProvider`、`AppBar`、`Paper`、`ToggleButtonGroup`、`TextField` などを使い、ヘッダー、入力フォーム、プレビュー、補足表示を一貫したデザインで構成しています。
 
-### バックエンド
-**Go 1.22** による軽量な静的ファイルサーバーです。
-`/healthz` エンドポイントを備え、コンテナの死活監視に対応。入力値を受け取る API は一切持ちません。
+QRコードの描画には `QRCode.toCanvas` を用いて、ブラウザの DOM 内で直接 QR コードを描画します。i18next による日英切り替えにも対応しています。
+
+### 配信基盤
+公開版は **Cloudflare Pages** で配信します。
+`frontend/` をビルドして生成される `build/` をそのまま公開し、入力値を受け取る API は用意しません。
 
 ### インフラ
-**Node → Go → Alpine** の 3 段マルチステージ構成の Dockerfile を作成。最終的なイメージサイズを最小化しています。
+GitHub の `main` ブランチに push すると Cloudflare Pages が `npm run build` を実行し、`build/` を公開します。カスタムドメインとして [https://qr.takumi-tokunaga.com/](https://qr.takumi-tokunaga.com/) を割り当てています。
 
 ## フロントエンド実装の工夫
 
@@ -78,39 +78,33 @@ await QRCode.toCanvas(canvasRef.current, wifiString, {
 
 - **バリデーション**: Wi-Fi モードでは SSID 必須チェック、URL モードでは `new URL()` による形式検証を実施し、誤った QR 生成を抑制。
 - **ダウンロード機能**: Canvas の `toDataURL` を活用し、PNG 画像として保存可能。追加ライブラリなしでブラウザ標準 API のみで完結させました。
+- **MUI による UI 構成**: ヘッダー、モード切り替え、入力フォーム、QR プレビュー、広告枠を MUI コンポーネントで構成し、画面幅に応じて自然にレイアウトが変わるようにしています。
+- **システムテーマ対応**: MUI のカラースキームを使い、OS やブラウザのテーマ設定に合わせてライト / ダーク表示を切り替えます。
 
 :::message
 **UXへの配慮**
-「データはサーバーに送信されません」という旨をフォーム直下に多言語で表示し、ユーザーが安心して利用できる工夫をしています。
+入力欄と QR プレビューを同じ画面に置き、入力するとすぐ結果が分かるようにしています。言語切り替えやセキュリティ方針ページもヘッダーからアクセスできるようにし、利用者が迷わず確認できる導線にしています。
 :::
 
-## バックエンド実装の工夫
+## 静的配信まわりの工夫
 
-Go で書かれたサーバーは、配信時の安定性を高めるための実装を施しています。
+Cloudflare Pages で静的ファイルとして配信するため、アプリ側では以下の点を意識しています。
 
-1. **SPA ルーティング**: フロントエンド側でのルーティング拡張に備え、存在しないパスへのリクエストは `index.html` を返すようにハンドリング。
-2. **キャッシュ制御**: `index.html` の更新が即座に反映されるよう、`Cache-Control: no-store` を明示。
-3. **環境変数による柔軟性**: 配信ディレクトリ (`STATIC_DIR`) やポート番号を環境変数で上書き可能にしています。
+1. **SPA ルーティング**: `/policy` や `/faq` などの直接アクセスでもアプリが開けるよう、Cloudflare Pages の `_redirects` で `index.html` にフォールバックさせる。
+2. **キャッシュ制御**: ハッシュ付きのアセットは長期キャッシュし、`index.html` は更新を拾いやすくする。
+3. **セキュリティヘッダー**: `_headers` で CSP、`X-Frame-Options`、`Permissions-Policy` などを設定し、静的サイトとして不要な権限を閉じる。
 
 ## ビルドとデプロイの流れ
 
-### Makefile によるローカル再現
-開発者が迷わないよう、コマンドを共通化しています。
+### ローカルビルド
 
 ```bash
-make build         # npm ci → npm run build → go build
-make frontend-build
-make backend-build
+cd frontend
+npm ci
+npm run build
 ```
 
-### Docker マルチステージビルド
-Dockerfile 内で以下のプロセスを完結させています。
-
-1. **frontend-builder**: Node 環境で Vite ビルドを実行。
-2. **server-builder**: Go 環境で配信サーバーのバイナリを作成。
-3. **runtime**: 最小限の Alpine イメージに上記 2 つの成果物のみをコピー。
-
-これにより、攻撃面（Attack Surface）を最小限に抑えた実行環境が構築されます。
+Vite が `build/` を生成し、その中身が Cloudflare Pages で配信されます。
 
 ### Cloudflare Pages での公開
 
@@ -128,8 +122,8 @@ Dockerfile 内で以下のプロセスを完結させています。
 ## セキュリティ観点でのまとめ
 
 - **データの局所性**: 入力値はブラウザから外に出ません。
-- **透明性**: 「サーバーへ送信しない」ことを UI 上で明示。
-- **堅牢なイメージ**: ランタイム層にビルドツールを含めないことで、脆弱性リスクを低減。
+- **静的配信**: 入力値を受け取る API を持たず、Cloudflare Pages はビルド済みファイルを配信するだけです。
+- **ヘッダー制御**: CSP や Permissions-Policy により、不要なブラウザ権限や埋め込みを制限します。
 
 ## これからの拡張アイデア
 
@@ -144,7 +138,7 @@ Dockerfile 内で以下のプロセスを完結させています。
 「入力値を預からない」というシンプルな設計ですが、社内ツールとしては非常に強力な安心感を提供できます。似たような課題感をお持ちの方は、ぜひリポジトリを参考にしてみてください。
 
 :::details 実装の検証状況（2025-12-01）
-ローカル環境および Docker コンテナ上にて、Wi-Fi モード・URL モード双方の生成・ダウンロード機能が正常に動作することを確認済みです。
+ローカル環境にて、Wi-Fi モード・URL モード双方の生成・ダウンロード機能が正常に動作することを確認済みです。
 :::
 
 :::details 公開版の検証状況（2026-06-05）
