@@ -90,7 +90,7 @@ await QRCode.toCanvas(canvasRef.current, wifiString, {
 
 Cloudflare Pages で静的ファイルとして配信するため、アプリ側では以下の点を意識しています。
 
-1. **SPA ルーティング**: `/policy` や `/faq` などの直接アクセスでもアプリが開けるよう、Cloudflare Pages の `_redirects` で `index.html` にフォールバックさせる。
+1. **SPA ルーティング**: `/policy` や `/faq` などの直接アクセスでもアプリが開けるよう、Cloudflare Pages の標準SPA挙動を利用する。
 2. **キャッシュ制御**: ハッシュ付きのアセットは長期キャッシュし、`index.html` は更新を拾いやすくする。
 3. **セキュリティヘッダー**: `_headers` で CSP、`X-Frame-Options`、`Permissions-Policy` などを設定し、静的サイトとして不要な権限を閉じる。
 
