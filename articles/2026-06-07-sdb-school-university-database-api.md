@@ -129,13 +129,23 @@ https://sdb.api.takumi-tokunaga.com
 - `GET /v1/faculties/{publicId}/departments`: 学科一覧
 - `GET /v1/suggest`: autocomplete 向けの軽量候補取得
 
-autocomplete では、総件数取得を行う `/v1/institutions` ではなく、軽量な `/v1/suggest` を使うようにしました。候補表示のたびに重い count query を走らせないためです。
+主なエラーレスポンスは以下です。
+
+| ステータス | 意味 |
+|---|---|
+| `400 Bad Request` | クエリパラメータ不正 |
+| `401 Unauthorized` | API キーなし・不正 |
+| `402 Payment Required` | 日次クレジット不足 |
+| `403 Forbidden` | API キー失効・アクセス禁止 |
+| `404 Not Found` | 指定した `publicId` が存在しない |
 
 ## API キーとクレジット
 
 API キーはポートフォリオ側の認証フローから取得します。
 
 API キーは `tkp_` で始まる固定長の文字列です。フロントエンド側では、最低限の形式チェックを行い、明らかに不正な値では API 通信を走らせないようにしています。
+
+クレジットは **1 リクエストにつき 1 消費** し、**毎日 0 時（JST）に回復** します。クレジットが尽きた場合は `402 Payment Required` が返ります。
 
 ただし、最終的な検証はバックエンド側で行います。大量アクセスによるクラウドコスト増加を避けるため、API キー検証とクレジット消費はバックエンドで扱う必要があります。
 
