@@ -3,7 +3,7 @@ title: "教育実習は、教員志望者を増やす仕組みになっていな
 emoji: "🏫"
 type: "idea"
 topics: ["教育実習", "教員", "インターン", "学校", "キャリア"]
-published: true
+published: false
 ---
 
 ## はじめに

@@ -3,7 +3,7 @@ title: "securePDF: ブラウザ内でPDFを編集する local-first ツールを
 emoji: "📄"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["pdf", "cloudflare", "react", "typescript", "security"]
-published: true
+published: false
 ---
 
 PDF の結合、並び替え、回転、削除のために外部サービスへファイルをアップロードするのは、内容によっては避けたい場面があります。
@@ -71,7 +71,7 @@ docs/         設計、API、セキュリティ、Cloud Run境界
 
 設計上の中心は `packages/schema` と `packages/core` です。
 
-GUI だけに処理を書かず、CLI だけに処理を書かず、API だけに処理を書かず、同じ操作スキーマと同じ core を使うようにしています。
+GUI だけに処理を書かず、CLI だけに処理を書かず、HTTP API だけに別仕様を作らず、同じ操作スキーマを使うようにしています。PDF の実処理は、ブラウザ、CLI、Cloud Run が同じ core を使う形に寄せています。
 
 ```text
 Browser GUI
@@ -82,12 +82,15 @@ CLI
   └─ operation schema
       └─ @securepdf/core
 
-Worker / Cloud Run
+Worker
+  └─ operation schema
+
+Cloud Run
   └─ operation schema
       └─ @securepdf/core
 ```
 
-これにより、画面上の操作、CLI のコマンド、HTTP API のリクエストが同じ考え方で扱えます。
+これにより、画面上の操作、CLI のコマンド、HTTP API のリクエストが同じ考え方で扱えます。Worker は軽い schema validation と proxy に限定し、PDF の実処理はブラウザ、CLI、または Cloud Run 側で行います。
 
 ## Cloudflare Worker を「軽く」保つ
 
@@ -193,7 +196,22 @@ CLI はローカルで処理できるものはローカルで処理し、必要�
 node apps/cli/dist/cli.js capabilities --json
 node apps/cli/dist/cli.js merge a.pdf b.pdf -o out.pdf
 node apps/cli/dist/cli.js convert image.png --to pdf -o image.pdf
+node apps/cli/dist/cli.js rotate in.pdf --pages 1,last --degrees 90 -o rotated.pdf
+node apps/cli/dist/cli.js delete in.pdf --pages 2,4-5 -o removed.pdf
+node apps/cli/dist/cli.js extract in.pdf --pages 1,3-4 -o extracted.pdf
+node apps/cli/dist/cli.js flip in.pdf --pages even --axis horizontal -o flipped.pdf
+node apps/cli/dist/cli.js reorder in.pdf --order 3,1,2 -o reordered.pdf
+node apps/cli/dist/cli.js insert-pdf base.pdf appendix.pdf --at 3 -o inserted.pdf
+node apps/cli/dist/cli.js insert-image base.pdf scan.png --at 0 -o with-scan.pdf
+node apps/cli/dist/cli.js split in.pdf --every 1 -o page.pdf
 node apps/cli/dist/cli.js organize --input a=a.pdf --plan plan.json -o out.pdf
+```
+
+Office ファイルは同じ `convert` コマンドで扱いますが、これはサーバー変換なので endpoint と API キーを指定します。CLI からは `X-API-Key` として送ります。
+
+```bash
+node apps/cli/dist/cli.js convert deck.pptx --to pdf \
+  --endpoint https://securepdf.example.com --api-key "$SECUREPDF_API_KEY" -o deck.pdf
 ```
 
 HTTP API は same-origin の Worker に載せています。
