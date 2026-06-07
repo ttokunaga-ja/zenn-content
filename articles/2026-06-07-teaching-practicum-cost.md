@@ -3,7 +3,7 @@ title: "教育実習は「完璧な実習簿」を作るためのものなのか
 emoji: "📓"
 type: "idea"
 topics: ["教育実習", "教職課程", "学校", "教育", "大学"]
-published: false
+published: true
 ---
 
 ## はじめに
