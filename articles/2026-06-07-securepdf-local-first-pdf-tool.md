@@ -3,7 +3,7 @@ title: "securePDF: ブラウザ内でPDFを編集する local-first ツールを
 emoji: "📄"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["pdf", "cloudflare", "react", "typescript", "security"]
-published: false
+published: true
 ---
 
 PDF の結合、並び替え、回転、削除のために外部サービスへファイルをアップロードするのは、内容によっては避けたい場面があります。

@@ -53,7 +53,7 @@ GitHub リポジトリ: [ttokunaga-ja/3D_Maze_Game](https://github.com/ttokunaga
 
 公開は Cloudflare Pages を使いました。`main` ブランチに push すると GitHub Actions が次の処理を実行します。
 
-```text
+```bash
 npm ci
 npm run typecheck
 npm run build
