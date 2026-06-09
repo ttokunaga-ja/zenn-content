@@ -3,7 +3,7 @@ title: "Three.js を使った授業成果物として 3D 迷路ゲームを公�
 emoji: "🧭"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["threejs", "typescript", "vite", "cloudflare", "game"]
-published: false
+published: true
 ---
 
 Three.js を使った授業成果物として、ブラウザで遊べる 3D 迷路ゲームを公開しました。
