@@ -34,7 +34,7 @@ GUI は Chrome の PDF ビューワーに近い操作感を意識し、左にペ
 
 初期画面では、中央のエリアに PDF や画像をドロップするか、「ファイルを開く」から選択します。
 
-![securePDFの初期画面](/images/2026-06-07-securepdf-client-first-pdf-tool/securepdf1.png)
+![securePDFの初期画面](/images/2026-06-07-securepdf-local-first-pdf-tool/securepdf1.png)
 
 PDF や JPEG / PNG のようにブラウザで扱えるものは、基本的にローカルで処理します。一方で、Office ファイルの PDF 変換のようにブラウザだけでは難しい処理は、バックエンド変換として切り出しています。
 
@@ -166,7 +166,7 @@ GUI は、PDF 編集ツールとして自然に使えることを優先しまし
 
 PDF を開くと、左側にページカード、右側にプレビューが表示されます。ページカード上のボタンから削除、回転、反転を直接操作できます。
 
-![PDFを開いたsecurePDFの編集画面](/images/2026-06-07-securepdf-client-first-pdf-tool/securepdf2.png)
+![PDFを開いたsecurePDFの編集画面](/images/2026-06-07-securepdf-local-first-pdf-tool/securepdf2.png)
 
 ページ追加位置も、左の一覧だけでなく右のプレビュー上に「ここに追加」として表示します。PDF のどこに新しいページが入るのかを、プレビュー側でも確認できるようにするためです。
 
