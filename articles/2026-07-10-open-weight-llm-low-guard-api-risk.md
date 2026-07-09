@@ -3,7 +3,7 @@ title: "公開重みLLMの「低ガードAPI」はなぜ残り得るのか"
 emoji: "🛡️"
 type: "idea"
 topics: ["ai", "llm", "security", "opensource", "ai安全性"]
-published: false
+published: true
 ---
 
 ## はじめに
