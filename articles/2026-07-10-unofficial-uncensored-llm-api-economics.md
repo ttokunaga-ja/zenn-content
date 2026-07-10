@@ -3,7 +3,7 @@ title: "検閲のない非公式LLM APIは経済的に実現するのか"
 emoji: "🧮"
 type: "idea"
 topics: ["ai", "llm", "glm", "security", "gpu"]
-published: false
+published: true
 ---
 
 ## はじめに
