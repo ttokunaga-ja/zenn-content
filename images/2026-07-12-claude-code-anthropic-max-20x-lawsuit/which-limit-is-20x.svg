@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Claude Max 20xの20倍表示と利用制限の関係</title>
+  <desc id="desc">購入画面の20倍表示に対し、公式ヘルプでは5時間セッション枠が20倍と説明され、Fin AI Agentは週次枠が20倍ではないと回答し、その正確な倍率は非公表であることを示す図</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#1f2937" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#5f6b7a"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="#f7f5f2"/>
+  <text x="800" y="78" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="43" font-weight="700" fill="#202124">「20倍」なのは、どの利用枠か</text>
+  <text x="800" y="120" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="22" fill="#5f6368">料金・購入画面の主表示と、Anthropic公式ヘルプの説明を分けて読む</text>
+
+  <g filter="url(#shadow)">
+    <rect x="310" y="160" width="980" height="205" rx="28" fill="#242424"/>
+    <rect x="345" y="194" width="180" height="42" rx="21" fill="#3b82f6"/>
+    <text x="435" y="223" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="22" font-weight="700" fill="#ffffff">購入・料金画面</text>
+    <text x="800" y="295" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="46" font-weight="700" fill="#ffffff">「Proプランの20倍の利用量」</text>
+    <text x="800" y="337" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="22" fill="#d1d5db">この画面内では「セッションあたり」と限定されていない</text>
+  </g>
+
+  <line x1="800" y1="385" x2="800" y2="438" stroke="#5f6b7a" stroke-width="5"/>
+  <path d="M782 435 L818 435 L800 459 Z" fill="#5f6b7a"/>
+
+  <g filter="url(#shadow)">
+    <rect x="115" y="475" width="650" height="270" rx="28" fill="#ffffff" stroke="#77a88d" stroke-width="4"/>
+    <circle cx="180" cy="540" r="33" fill="#e5f4eb"/>
+    <text x="180" y="551" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="30" font-weight="700" fill="#357a55">5h</text>
+    <text x="235" y="548" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="32" font-weight="700" fill="#202124">5時間セッション枠</text>
+    <text x="440" y="635" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="61" font-weight="800" fill="#357a55">Pro比 20倍</text>
+    <text x="440" y="691" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="23" fill="#53615a">公式ヘルプが明示している倍率</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="835" y="475" width="650" height="270" rx="28" fill="#ffffff" stroke="#d59462" stroke-width="4"/>
+    <circle cx="900" cy="540" r="33" fill="#fff0e4"/>
+    <text x="900" y="551" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="25" font-weight="700" fill="#a65f2b">7d</text>
+    <text x="955" y="548" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="32" font-weight="700" fill="#202124">週次枠（別の制限）</text>
+    <text x="1160" y="617" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="55" font-weight="800" fill="#b45f27">20倍ではない</text>
+    <text x="1160" y="660" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="19" font-weight="700" fill="#6b584a">Fin AI Agentの回答／正確なPro比は非公表</text>
+    <text x="1160" y="697" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="20" fill="#6b584a">訴状は2025年のSonnet 4目安を約6倍と算定</text>
+    <text x="1160" y="725" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="17" fill="#8a6d5a">※約6倍は原告の主張であり、裁判所の認定ではない</text>
+  </g>
+
+  <rect x="165" y="790" width="1270" height="70" rx="20" fill="#fff3cd" stroke="#e2bd55" stroke-width="2"/>
+  <text x="800" y="834" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-size="27" font-weight="700" fill="#6d5210">問題の中心：購入画面だけでは、20倍の対象がセッション枠だと読み取りにくい</text>
+</svg>
