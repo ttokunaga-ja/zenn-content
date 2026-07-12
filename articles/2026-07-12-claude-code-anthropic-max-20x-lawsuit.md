@@ -1,9 +1,9 @@
 ---
-title: "Claudeサブスク「Max 20x」の表示問題、米国で集団訴訟"
+title: "【Anthropicの嘘】Claudeサブスク「Max 20x」の表示問題、米国で集団訴訟"
 emoji: "⚖️"
 type: "idea"
 topics: ["claude", "anthropic", "ai", "サブスク", "消費者問題"]
-published: false
+published: true
 ---
 
 ## 「20倍」と聞いて、週次制限も20倍だと思いませんか

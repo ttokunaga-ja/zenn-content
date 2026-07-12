@@ -3,7 +3,7 @@ title: "個人開発のAI利用構成と2026年5月の課金額(API換算)を公
 emoji: "💸"
 type: "tech"
 topics: ["ai", "openai", "codex", "gpt5", "個人開発"]
-published: false
+published: true
 ---
 
 こんにちは、個人開発者のttokunagaです。
