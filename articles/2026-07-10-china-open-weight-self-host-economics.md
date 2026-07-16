@@ -3,7 +3,7 @@ title: "中国系フロンティア公開重みLLMをセルフホストするの
 emoji: "🖥️"
 type: "idea"
 topics: ["ai", "llm", "gpu", "selfhost", "china"]
-published: false
+published: true
 ---
 
 ## はじめに

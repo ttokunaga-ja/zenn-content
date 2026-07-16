@@ -3,7 +3,7 @@ title: "中国系LLM APIは推論で利益が出ているのか"
 emoji: "📊"
 type: "idea"
 topics: ["ai", "llm", "api", "economics", "china"]
-published: false
+published: true
 ---
 
 ## はじめに
