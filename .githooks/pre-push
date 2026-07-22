@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+# Publish only the default branch. Feature branches remain local to Zenn.
+if [ "$(git branch --show-current)" != "main" ]; then
+  exit 0
+fi
+
+repo_root=$(git rev-parse --show-toplevel)
+exec node "$repo_root/scripts/sync-portfolio.mjs"
