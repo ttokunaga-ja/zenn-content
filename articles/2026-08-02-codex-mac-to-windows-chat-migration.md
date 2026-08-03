@@ -40,7 +40,7 @@ Windows
 この記事では、この手順を順番に説明します。
 
 :::message alert
-この記事で扱う保存先と移行結果は、2026年8月2日時点の筆者環境で実ファイルを調査し、MacからWindowsへの移行後の動作まで検証したものです。この記事では検証済みの事実として扱います。ただし、将来のCodexではファイル名やSQLiteのスキーマが変わる可能性があります。
+この記事で扱う保存先と移行結果は、2026年8月時点の筆者環境で実ファイルを調査し、MacからWindowsへの移行後の動作まで検証したものです。Windows版は`OpenAI.Codex 26.721.11231.0`で確認しました。この記事では検証済みの事実として扱います。ただし、将来のCodexではファイル名やSQLiteのスキーマが変わる可能性があります。
 
 作業前にCodexを完全終了し、Mac側とWindows側の両方でバックアップを作成してください。
 :::
@@ -150,12 +150,20 @@ sqlite3 "$MigrationStage/state_5.sqlite" "PRAGMA integrity_check;"
 ```bash
 MigrationArchive="$MigrationStage.tar.gz"
 
-tar -czf "$MigrationArchive" -C "$MigrationStage" .
+COPYFILE_DISABLE=1 tar -czf "$MigrationArchive" -C "$MigrationStage" .
 tar -tzf "$MigrationArchive" | sed -n '1,40p'
 ls -lh "$MigrationArchive"
 ```
 
-アーカイブ内に、少なくとも`state_5.sqlite`、`session_index.jsonl`、`sessions/`があることを確認します。
+`COPYFILE_DISABLE=1`は必須です。macOSの`tar`は拡張属性とリソースフォークを`._`で始まる別エントリとして埋め込むため、これを付けないとWindows側にファイル数と同じだけのゴミが展開されます。筆者の環境では、指定を忘れた結果4,384個・17.7MBの`._*`ファイルが`.codex`へ紛れ込みました。
+
+混入していないことを確認します。
+
+```bash
+tar -tzf "$MigrationArchive" | grep -c '/\._' || true
+```
+
+`0`であること、そしてアーカイブ内に少なくとも`state_5.sqlite`、`session_index.jsonl`、`sessions/`があることを確認します。
 
 作成した`tar.gz`を、外付けストレージや安全なファイル転送手段でWindowsへ移します。
 
@@ -169,17 +177,33 @@ ls -lh "$MigrationArchive"
 
 Windows版Codexを一度起動してログインします。これにより、Windows側の認証情報と基本的なローカル状態が作られます。
 
-ログイン後、Codexを完全終了します。PowerShellでプロセスを確認します。
+ログイン後、Codexを完全終了します。ここが最初の落とし穴でした。**Windows版の本体は`ChatGPT.exe`で、`codex.exe`はその子プロセス**です。`codex.exe`だけを終了しても、親が数秒で再生成します。
+
+まず親子関係を確認します。
 
 ```powershell
-Get-Process -Name "Codex", "codex" -ErrorAction SilentlyContinue
+Get-CimInstance Win32_Process -Filter "Name like 'ChatGPT%' or Name like 'codex%'" |
+    Select-Object ProcessId, ParentProcessId, Name
 ```
 
-表示されたものが終了すべきCodexプロセスだと確認できた場合だけ、次を実行します。
+親が`explorer.exe`になっている`ChatGPT.exe`が起点です。そのPIDを指定して、ツリーごと終了します。
 
 ```powershell
-Stop-Process -Name "Codex" -Force -ErrorAction SilentlyContinue
-Stop-Process -Name "codex" -Force -ErrorAction SilentlyContinue
+taskkill /PID <root-chatgpt-pid> /T /F
+```
+
+ウィンドウを閉じただけではプロセスは常駐したままです。この状態では`MainWindowHandle`が`0`になるため、「アプリは閉じたつもりなのに終了していない」という取り違えが起きます。終了後、残っていないことを確認します。
+
+```powershell
+Get-Process -ErrorAction SilentlyContinue |
+    Where-Object { $_.ProcessName -match '^(ChatGPT|codex)' }
+```
+
+何も表示されなければ完全終了です。作業後の再起動はストアアプリとして起動します。AppIDは`Get-StartApps`で確認できます。
+
+```powershell
+Get-StartApps | Where-Object { $_.Name -match "ChatGPT|Codex" }
+Start-Process "shell:AppsFolder\OpenAI.Codex_2p2nqsd0c76g0!App"
 ```
 
 ### 2. Windows側の`.codex`を丸ごとバックアップする
@@ -218,6 +242,18 @@ state_5.sqlite
 ```
 
 Mac側にアーカイブ済み会話や添付ファイルがなければ、対応するフォルダは存在しない場合があります。
+
+`._`で始まるファイルや`.DS_Store`が混ざっていたら、`.codex`へ配置する前に取り除きます。
+
+```powershell
+Get-ChildItem -LiteralPath $ImportDir -Recurse -File -Force |
+    Where-Object { $_.Name.StartsWith("._") -or $_.Name -eq ".DS_Store" } |
+    Remove-Item -Force
+```
+
+ワイルドカードではなく`StartsWith("._")`で判定します。Codexは`..codex-global-state.json.tmp-*`のようにドット2つで始まる実データのファイルを作るため、`.*`のような広い条件で消すと必要なファイルまで巻き込みます。
+
+なお`._rollout-*.jsonl`は会話一覧を壊しません。Codexはファイル名が`rollout-`で始まるものだけを読むため、`._`付きは最初から対象外です。実害はありませんが、ファイル数が倍近くに膨らむので取り除いておきます。
 
 展開したDBの整合性も確認します。
 
@@ -317,7 +353,7 @@ sqlite3 $CodexDb "SELECT COUNT(*) FROM threads;"
 | 認証・端末識別 | `auth.json`、`installation_id`、`ipc/` | Windows側でログインし直す |
 | キャッシュ・一時ファイル | `cache/`、`.tmp/`、`models_cache.json` | 移行しない |
 | 実行状態 | `shell_snapshots/`、`worktrees/`、`process_manager/` | Windows側で作り直す |
-| UI状態 | `.codex-global-state.json` | Windows側の状態を維持する |
+| UI状態 | `.codex-global-state.json` | 端末固有の設定は維持し、プロジェクト関連のキーだけ後から移す |
 | 設定・拡張 | `config.toml`、`plugins/`、`skills/`、`rules/` | 履歴移行後に個別設定する |
 | その他の機能データ | `goals_1.sqlite`、`memories_1.sqlite`、`automations/` | 必要性を確認して別途扱う |
 
@@ -393,7 +429,7 @@ C:\Users\<windows-user>\Develop\EduAnima
 
 今回、このファイルは移行対象から意図的に外しています。そのため、Mac側のプロジェクト登録状態はWindowsへ引き継がれません。
 
-ただし、Mac側の`.codex-global-state.json`をWindowsへそのままコピーすると、Mac固有のパスやウィンドウ状態まで持ち込むことになります。プロジェクト分類を戻すためだけに上書きすることは推奨しません。
+ただし、Mac側の`.codex-global-state.json`をWindowsへそのままコピーすると、Mac固有のパスやウィンドウ状態まで持ち込むことになります。丸ごと上書きするのではなく、プロジェクト関連のキーだけを取り出してマージします。手順は後述の「`.codex-global-state.json`からプロジェクト分類を復元する」で扱います。
 
 ### まずWindowsでプロジェクトを開き直す
 
@@ -437,6 +473,33 @@ C:\Users\<windows-user>\Develop\EduAnima
 ```
 
 プロジェクト分類には保存されたパス表記が影響します。そのため、推測で決めず、新規会話に実際に保存された値をWindows側の正しい表記として使います。
+
+### 日本語を含むパスはUnicode正規化形式が違う
+
+パスに日本語が含まれる場合、区切り文字を直しただけでは一致しません。**macOSはファイル名をNFD、WindowsはNFCで保存する**ためです。
+
+濁点・半濁点のある文字で差が出ます。`ジ`を例にすると次のようになります。
+
+```text
+macOS (NFD) : シ + 濁点   U+30B7 U+3099   … 2文字
+Windows(NFC): ジ          U+30B8          … 1文字
+```
+
+見た目は同じですが別の文字列なので、NFDのまま持ち込んだパスはWindows上で存在しないフォルダを指します。筆者の環境では`Webインテリジェンス特論`というフォルダがこれに該当し、実体があるのに`Test-Path`が`False`を返しました。
+
+Mac由来の文字列はNFCへ正規化してから使います。
+
+```powershell
+$Normalized = $MacPath.Normalize([Text.NormalizationForm]::FormC)
+```
+
+判定だけなら次で確認できます。
+
+```powershell
+"C:\Users\<windows-user>\Documents\Webインテリジェンス特論".IsNormalized([Text.NormalizationForm]::FormC)
+```
+
+`False`が返る文字列は、`cwd`でも`rollout_path`でも`.codex-global-state.json`でも同じ問題を起こします。ASCIIだけのパスなら影響しません。
 
 ### 必要な場合だけ`cwd`を置換する
 
@@ -517,11 +580,65 @@ sqlite3 $CodexDb `
    COMMIT;"
 ```
 
-### `cwd`を直しても分類が戻らない場合
+## `.codex-global-state.json`からプロジェクト分類を復元する
 
-今回の検証では、`cwd`とは別に、プロジェクト登録やスレッド割り当てに関係するUI状態が`.codex-global-state.json`へ保存されていることも確認しました。つまり、プロジェクト分類に関係する状態は`cwd`だけではありません。また、SQLiteと会話ファイルが残っていても、プロジェクトのサイドバーへ過去の会話が表示されないという不具合報告もあります。
+`cwd`を直しても分類が戻らない場合、残る原因はプロジェクト登録そのものです。ここはMac側の`.codex-global-state.json`から**プロジェクト関連のキーだけ**を取り出し、パスを書き換えてWindows側へマージすれば復元できました。
 
-`cwd`を直しても分類が戻らない場合は、`.codex-global-state.json`を推測で一括編集しません。「最近」や検索から会話を利用しつつ、移行前のバックアップを維持し、Codexの更新や公式の修復手段を待つ方が安全です。
+丸ごと上書きしないことが前提です。このファイルには、認証済みアカウント、ウィンドウ位置、承認モードといった端末固有の設定も同居しています。
+
+移すキーは次のとおりです。
+
+| キー | 内容 |
+|---|---|
+| `local-projects` | プロジェクト定義（`id`、`name`、`rootPaths`） |
+| `project-order` / `pinned-project-ids` | サイドバーの並び順とピン留め |
+| `thread-project-assignments` | スレッドとプロジェクトの対応（`projectId`、`cwd`） |
+| `thread-writable-roots` | スレッドごとの書き込み許可ルート |
+| `electron-saved-workspace-roots` | 登録済みワークスペース |
+
+一方、`agent-mode-by-host-id`、`skip-full-access-confirm`、ウィンドウ位置、インストールID、オンボーディング状態はWindows側の値を残します。文字列としてパスを含むのは上表のキーだけなので、置換対象もここに限定できます。
+
+### プロジェクトIDは書き換えない
+
+`local-`で始まるプロジェクトIDは、ルートパスのSHA-256の先頭32桁から生成されています。
+
+```text
+local- + sha256("/Users/<mac-user>/Develop/EduAnima") の先頭32桁
+```
+
+パスを変えるならIDも再計算すべきに見えますが、**再計算してはいけません**。このハッシュ生成は初回セットアップ時の一度きりのマイグレーションでしか実行されず、完了フラグが`electron-completed-local-data-migration-ids`へ記録されるため、セットアップ済みのWindows環境では二度と走りません。
+
+通常動作時は、ワークスペースを開くたびに`rootPaths`の一致でプロジェクトを探し、見つからないときだけ新しいランダムUUIDを採番します。つまり照合に使われるのはIDではなくパスです。
+
+したがって、**IDはMac側のまま維持し、`rootPaths`だけWindowsのパスへ書き換える**のが正解です。IDを保てば、`thread-project-assignments`やサイドバーの並び順など既存の参照がすべて整合したまま残ります。
+
+### 権限設定を持ち込む場合の注意
+
+`heartbeat-thread-permissions-by-id`には、スレッドごとの承認ポリシーとサンドボックス設定が入っています。Mac側をフルアクセスで使っていた場合、`dangerFullAccess`や`approvalPolicy: never`がそのまま移ります。筆者の環境では382件中341件が`dangerFullAccess`でした。
+
+該当スレッドを再開すると承認なしで実行されるため、移すかどうかは意識して決めます。移さなければ、Windows側の既定の承認モードが適用されます。
+
+### 反映後に重複を確認する
+
+編集はCodexを完全終了した状態で行い、書き込み前に元ファイルを控えます。ChatGPT.exeが常駐していると、終了時に古い内容で上書きされます。
+
+再起動後、同じ`rootPaths`が複数のIDにぶら下がっていないかを確認します。ここが増えていなければ、IDの扱いは正しく機能しています。
+
+```powershell
+$State = Get-Content -LiteralPath (Join-Path $env:USERPROFILE ".codex\.codex-global-state.json") -Encoding UTF8 -Raw |
+    ConvertFrom-Json
+
+$State.'local-projects'.PSObject.Properties |
+    ForEach-Object { [PSCustomObject]@{ Id = $_.Name; Root = $_.Value.rootPaths -join ";" } } |
+    Group-Object Root |
+    Where-Object Count -gt 1
+```
+
+:::message alert
+`Get-Content -Raw`は必ず`-Encoding UTF8`を付けます。PowerShell 5.1は指定がないとANSIコードページで読むため、日本語を含むJSONが壊れて見えます。筆者はこれで「ファイルが破損している」と誤判定しました。
+:::
+
+何も表示されなければ重複はありません。分類が戻らない場合は、移行前のバックアップへ戻せる状態を保ったまま、「最近」や検索から会話を利用する運用に切り替えます。
 
 ## まとめ
 
@@ -537,7 +654,14 @@ state_5.sqlite
 
 SQLiteはファイルを直接コピーせず、`.backup`を使って移行用DBを作ると、WALを含む状態を一つのDBへまとめられます。Windows側では、既存の`.codex`を丸ごとバックアップしてから、会話関連データだけを置き換えます。
 
-最後の落とし穴は、会話履歴とプロジェクト分類が別のファイルと値で管理されていたことです。今回、会話本文は正常に移行できましたが、`.codex-global-state.json`を移さなかったためプロジェクト登録・UI状態は引き継がれず、さらに`state_5.sqlite`の`cwd`にはMacのパスが残っていました。プロジェクト配下に表示されない場合は、Windowsでプロジェクトを開き直し、必要な場合だけ`cwd`をWindows側の表記へ修正します。
+会話本文はこれで移りますが、プロジェクト分類は別管理でした。踏んだ落とし穴は4つです。
+
+1. **プロセスが終わっていない** ―― Windows版の本体は`ChatGPT.exe`で、`codex.exe`を止めても再生成される。`taskkill /T /F`でツリーごと終了する
+2. **`._*`ファイルの混入** ―― macOSの`tar`は`COPYFILE_DISABLE=1`を付けないと拡張属性を別ファイルとして埋め込む
+3. **日本語パスの正規化形式** ―― macOSはNFD、WindowsはNFC。見た目が同じでも文字列は一致しない
+4. **プロジェクト登録が別ファイル** ―― `state_5.sqlite`の`cwd`と`.codex-global-state.json`の両方を直す必要がある
+
+プロジェクト配下に表示されない場合は、まずWindowsでプロジェクトを開き直します。それでも戻らなければ、`cwd`をWindows側の表記へ修正し、`.codex-global-state.json`のプロジェクト関連キーをパスだけ書き換えてマージします。このときプロジェクトIDは再計算せず、Mac側の値をそのまま維持するのが要点です。
 
 ## 参考資料
 
