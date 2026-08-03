@@ -501,6 +501,31 @@ $Normalized = $MacPath.Normalize([Text.NormalizationForm]::FormC)
 
 `False`が返る文字列は、`cwd`でも`rollout_path`でも`.codex-global-state.json`でも同じ問題を起こします。ASCIIだけのパスなら影響しません。
 
+この問題が厄介なのは、**PowerShellの`-eq`がNFCとNFDを等しいと判定する**ことです。カルチャ依存の比較がUnicodeの正準等価を適用するためで、`-ceq`にしても結果は変わりません。
+
+```powershell
+$Nfc -eq $Nfd                                              # True  : 一致して見える
+[string]::Equals($Nfc, $Nfd, [StringComparison]::Ordinal)  # False : 実際は別の文字列
+Test-Path -LiteralPath $Nfd                                # False : ファイルシステムも別物として扱う
+```
+
+つまり、原因を探して文字列を比較すると「同じ」と表示されるのに、パスだけが解決しません。筆者はこれで一度切り分けを誤りました。パスの比較には`StringComparison::Ordinal`を使います。
+
+なお、この再現にMacは不要です。NFDはWindows側で合成できるため、移行元を用意しなくても手元で完結します。
+
+```powershell
+$Nfc = "Webインテリジェンス特論".Normalize([Text.NormalizationForm]::FormC)
+$Nfd = $Nfc.Normalize([Text.NormalizationForm]::FormD)
+
+$Sandbox = Join-Path $env:TEMP ([Guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Path (Join-Path $Sandbox $Nfc) -Force | Out-Null
+
+Test-Path -LiteralPath (Join-Path $Sandbox $Nfc)   # True
+Test-Path -LiteralPath (Join-Path $Sandbox $Nfd)   # False
+```
+
+移行後の確認を自動化する場合も、この合成をそのまま回帰テストに使えます。移行が済んだあとは、ツリー全体を走査して`IsNormalized`が`False`になる名前が残っていないかを確認しておくと、後から効いてくる不一致を潰せます。
+
 ### 必要な場合だけ`cwd`を置換する
 
 Codexを完全終了し、編集前のDBをバックアップします。
@@ -658,7 +683,7 @@ SQLiteはファイルを直接コピーせず、`.backup`を使って移行用DB
 
 1. **プロセスが終わっていない** ―― Windows版の本体は`ChatGPT.exe`で、`codex.exe`を止めても再生成される。`taskkill /T /F`でツリーごと終了する
 2. **`._*`ファイルの混入** ―― macOSの`tar`は`COPYFILE_DISABLE=1`を付けないと拡張属性を別ファイルとして埋め込む
-3. **日本語パスの正規化形式** ―― macOSはNFD、WindowsはNFC。見た目が同じでも文字列は一致しない
+3. **日本語パスの正規化形式** ―― macOSはNFD、WindowsはNFC。しかもPowerShellの`-eq`は両者を等しいと判定するため、文字列を比べても原因に辿り着けない
 4. **プロジェクト登録が別ファイル** ―― `state_5.sqlite`の`cwd`と`.codex-global-state.json`の両方を直す必要がある
 
 プロジェクト配下に表示されない場合は、まずWindowsでプロジェクトを開き直します。それでも戻らなければ、`cwd`をWindows側の表記へ修正し、`.codex-global-state.json`のプロジェクト関連キーをパスだけ書き換えてマージします。このときプロジェクトIDは再計算せず、Mac側の値をそのまま維持するのが要点です。
