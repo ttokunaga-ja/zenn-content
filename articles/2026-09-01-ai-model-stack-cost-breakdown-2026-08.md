@@ -161,21 +161,27 @@ CodexはGPT-5.6 Sol換算を使い、サブスク料金と比較します。API�
 
 ---
 
-## 📰 2026年8月のAIニュースと所感
+## 📰 2026年8月のAIニュース
 
-### GPT-5.6 Solの価格が8月21日に下がった
+### 1位：OpenAI・Anthropicが開発・評価を一時停止
 
-[OpenAIの変更履歴](https://developers.openai.com/api/docs/changelog)によると、GPT-5.6 Solは8月21日に通常入力が **\$5から\$4**、出力が **\$30から\$20** へ下がりました。今回の主試算では、8月末の単価を全量へ適用しています。
+安全性問題を受け、学習やサイバー評価の一部を一時停止し、隔離・監視を強化しました。([OpenAI](https://openai.com/index/pacing-model-development-cyber-capabilities/)、[Anthropic](https://www.anthropic.com/news/improving-alignment-security-efforts))
 
-改定前の **\$5 / \$0.50 / \$30** を同じ713.10229億トークンへ当てはめると、参考換算額は **\$162,943.87**、約2,444.2万円です。
+### 2位：EU AI Actの透明性要件・執行体制が本格適用
 
-### Terra・Lunaは用途に応じた選択肢になる
+8月2日から、AIとの対話の通知や生成コンテンツの識別など、透明性確保の要件が適用されました。([欧州委員会](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai))
 
-8月末単価で同じ利用量を換算すると、Terraは約977.7万円、Lunaは約97.8万円です。主試算はSolとし、Terra・Lunaは同じトークン数に対する価格差を比較しています。
+### 3位：NVIDIA、5,000億ドル超のAIインフラ金融構想
 
-### ClaudeはProプランへ変更した
+8月10日、金融大手6社と、AIインフラへ5,000億ドル超の第三者資金を動員する構想を発表しました。([NVIDIA](https://nvidianews.nvidia.com/news/nvidia-partners-with-apollo-blackrock-blackstone-brookfield-goldman-sachs-and-kkr-to-establish-ai-compute-infrastructure-financing-platforms-to-mobilize-over-500-billion-of-third-party-capital))
 
-Claudeは過去のMax 20xからProプランへ変更しました。Proの月払いは税抜\$20、日本の消費税10%を含めて\$22です。
+### 4位：テキサス州、新規データセンターの接続承認を停止
+
+8月3日、電力・水使用などの監査が完了するまで、新たな接続承認を進めない方針を示しました。([テキサス州知事室](https://gov.texas.gov/news/post/governor-abbott-directs-comprehensive-data-center-audit))
+
+### 5位：SpaceX／Cursor、NVIDIA／Hugging Faceの買収・統合
+
+8月14日にSpaceXのCursor買収が完了し、27日にはNVIDIAのHugging Face買収合意が報じられました。([Cursor](https://cursor.com/blog/joining-spacex)、[Reuters](https://www.reuters.com/technology/nvidia-talks-acquire-hugging-face-13-billion-deal-business-insider-reports-2026-08-27/))
 
 ---
 
