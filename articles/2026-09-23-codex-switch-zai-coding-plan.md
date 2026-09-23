@@ -3,8 +3,15 @@ title: "Z.ai Coding PlanをCodexアプリで使う"
 emoji: "🧭"
 type: "tech"
 topics: ["codex", "glm", "zai", "ai", "llm"]
-published: false
+published: true
 ---
+
+Codexを使っていて、こんな経験はありませんか。
+
+- 作業の途中で、Codexの週間の利用上限を使い切ってしまった
+- Appshots（前面のウィンドウを撮って会話に添える機能）やブラウザー、Computer Useが便利で、ほかのモデルでも使いたいと思った
+
+Z.aiのCoding Planを契約しているなら、その定額枠でCodexアプリを動かせます。アプリの画面や機能はそのままに、中で動くモデルだけをZ.aiのGLMに替えます。ChatGPTの利用枠は使わないので、上限に達したあとも同じアプリで作業を続けられます。
 
 ## 結論――Codex用のエンドポイントは`/api/v1`
 
@@ -31,7 +38,7 @@ wire_api = "responses"
 
 :::message
 カスタムプロバイダの足し方、プロファイルの作り方、Codexアプリで2つ目のインスタンスを立てる方法は、前記事で詳しく書きました。共通部分はそちらを参照してください。
-[CodexにOpenRouterを足して、ChatGPT枠を保ったまま別モデルを使う](https://zenn.dev/ttokunaga-ja/articles/2026-09-22-codex-openrouter-custom-provider)
+[CodexにOpenRouterを足して、ChatGPT枠を保ったまま別モデルを使う](https://zenn.dev/ttokunaga-ja/articles/2026-09-22-codex-switch-openrouter)
 :::
 
 ## 検証環境
@@ -95,9 +102,10 @@ TOML
 
 ```bash
 curl -s https://api.z.ai/api/v1/models \
-  -H "authorization: Bearer $(cat ~/.codex/zai.key)" \
-  > ~/.codex-zai/zai_models.json
+  -H "authorization: Bearer $(cat ~/.codex/zai.key)"
 ```
+
+アプリで使うときは、後の「5. アプリで使う」で使うcodexSwitchがこの一覧を取得して保存するので、手で保存する必要はありません。
 
 返ってくるJSONのフィールドを見ると、Codex向けに作られていることが分かります。
 
@@ -120,7 +128,7 @@ curl -s https://api.z.ai/api/v1/models \
 }
 ```
 
-`shell_type`や`apply_patch_tool_type`といったCodex固有のフィールドまで含まれています。**カタログを自作する必要はありません。**取得したファイルを`model_catalog_json`に指定するだけです。
+`shell_type`や`apply_patch_tool_type`といったCodex固有のフィールドまで含まれています。**カタログを自作する必要はありません。**取得したファイルを`model_catalog_json`に指定するだけで使えます。
 
 配信されているのは次の3モデルでした（執筆時点）。
 
@@ -131,22 +139,7 @@ curl -s https://api.z.ai/api/v1/models \
 | `glm-5-turbo` | 204,800 | （空） |
 
 :::message alert
-このカタログをそのまま使うと、**アプリのEffortスライダーが2段しか出ません**。`glm-5-turbo`にいたってはEffortの申告が空です。原因と直し方は後述の落とし穴に書きました。先に直しておくなら、取得後にこの1手間を挟んでください。
-
-```bash
-python3 - <<'PY'
-import json
-P="/Users/yourname/.codex-zai/zai_models.json"
-LEVELS=[("low","Light reasoning"),("medium","Balanced reasoning"),
-        ("high","Enhanced reasoning"),("xhigh","Extended reasoning"),
-        ("max","Deep reasoning")]
-d=json.load(open(P))
-for m in d["models"]:
-    m["supported_reasoning_levels"]=[{"effort":e,"description":x} for e,x in LEVELS]
-    m["default_reasoning_level"]="high"
-json.dump(d, open(P,"w"), ensure_ascii=False)
-PY
-```
+このカタログをそのまま使うと、**アプリのEffortスライダーが2段しか出ません**。`glm-5-turbo`にいたってはEffortの申告が空です。codexSwitchは取得したときにこれを直します。原因と直し方は後述の落とし穴に書きました。
 :::
 
 ### 4. 動作確認
@@ -175,47 +168,64 @@ tokens used 48,065
 
 ### 5. アプリで使う
 
-Codexアプリで使うには、前記事と同じく`CODEX_HOME`を分けた2つ目のインスタンスを立てます。
+Codexアプリで使うには、前記事と同じく`CODEX_HOME`を分けた2つ目のインスタンスを立てます。準備と起動には、このために作ったツール[codexSwitch](https://github.com/ttokunaga-ja/codexSwitch)を使います。macOSとWindowsで同じコマンドで動きます（個人で作った非公式のツールで、OpenAIとは関係ありません）。手順は4つです。
 
-`~/.codex-zai/config.toml`を作ります。
+#### 1. インストールする
 
-```toml
-model_provider = "zai"
-model = "glm-5.3"
-model_reasoning_effort = "high"
-model_catalog_json = "/Users/yourname/.codex-zai/zai_models.json"
-
-[model_providers.zai]
-name = "Z.ai Coding Plan"
-base_url = "https://api.z.ai/api/v1"
-wire_api = "responses"
-requires_openai_auth = false
-
-[model_providers.zai.auth]
-command = "/bin/cat"
-args = ["/Users/yourname/.codex/zai.key"]
-```
-
-`requires_openai_auth = false`で、ChatGPTへのサインインなしで動く状態になります。
+macOSでは次のようにインストールします。Rustが必要です。Windowsの手順はREADMEにあります。
 
 ```bash
-open -n \
-  --env "CODEX_HOME=$HOME/.codex-zai" \
-  --env "CODEX_ELECTRON_USER_DATA_PATH=$HOME/Library/Application Support/Codex Zai/user-data" \
-  /Applications/ChatGPT.app \
-  --args --user-data-dir="$HOME/Library/Application Support/Codex Zai/user-data"
+git clone https://github.com/ttokunaga-ja/codexSwitch.git
+cd codexSwitch
+./install.sh   # ~/.local/bin/codexSwitch に入ります
 ```
+
+#### 2. 準備する
+
+```bash
+codexSwitch init
+```
+
+2つ目のインスタンスの設定（`~/.codex-switch/config.toml`）とモデル一覧を作り、最後にAPIキーの置き場所を案内します。設定の中身は、2.で`~/.codex/config.toml`に足したのと同じ`[model_providers.zai]`に、`requires_openai_auth = false`を加えたものです。これで、ChatGPTへのサインインなしで動きます。
+
+#### 3. APIキーを入れる
+
+1.で`~/.codex/zai.key`に置いたキーが、そのまま使われます。まだの場合は、initの途中で貼り付けるか（画面には表示されません）、案内されたファイルに入れてください。
+
+#### 4. 起動する
+
+```bash
+codexSwitch -zai
+```
+
+初回は、3.のモデル一覧をZ.aiから取得し、Effortの段を広げてから起動します。モデルは`glm-5.3-flash`で起動します。別のモデルにしたいときは`codexSwitch -zai --model glm-5.3`のように指定します。次からは`codexSwitch`だけで、前回と同じ内容で起動します。
+
+起動するときは、Z.aiのキーだけを確かめます。使っていないOpenRouterのキーを求めることはありません。キーが入っていなければ、キーのファイルの場所と入れ方を表示して止まります。
 
 モデルピッカーに`glm-5.3`・`glm-5.3-flash`・`glm-5-turbo`が並びます。
 
-なお、1つのインスタンスは1つのプロバイダしか持てません。OpenRouterとZ.aiを両方アプリで使いたい場合は、インスタンスをもう1つ作るか、起動スクリプトで設定を書き換えてから起動する形になります。私は後者にして、引数でプロバイダを選べるようにしています。
+本体のアプリと並べると次のようになります。左が2つ目のインスタンスで、左下にプロバイダ名の「Z.ai Coding Plan」、入力欄にモデルの`glm-5.3-flash`が出ています。右の本体は、ChatGPTの利用上限に達した状態でもそのまま残ります。
+
+![macOSで、Z.ai Coding Planで動く2つ目のインスタンス（左）と本体のCodexアプリ（右）を並べて起動した画面](/images/2026-09-23-codex-switch-zai-coding-plan/codex-app-two-instances-macos.png)
+
+![Windows版のCodexアプリでも、Z.ai Coding Planの2つ目のインスタンス（左）と本体（右）を並べて起動できる](/images/2026-09-23-codex-switch-zai-coding-plan/codex-app-two-instances-windows.png)
+
+なお、1つのインスタンスで同時に使えるのはZ.aiかOpenRouterのどちらかで、`-zai` / `-openrouter`とモデルは起動時にしか読まれません。initは前記事のOpenRouterの定義も同時に作るので、OpenRouterのキーを入れておけば、アプリを終了してから指定し直すだけで切り替えられます。
 
 ```bash
-codex-or zai          # Z.ai Coding Plan
-codex-or openrouter   # OpenRouter
+codexSwitch -openrouter   # OpenRouter
+codexSwitch -zai          # Z.ai Coding Plan
 ```
 
-プロバイダは起動時に読まれるので、切り替えるときはウィンドウを一度閉じる必要があります。
+ウィンドウを閉じるだけでは、アプリは終了せずに動き続けます。macOSでは⌘Q、Windowsでは通知領域のアイコンを右クリックして「Exit」で終了してください。起動中に別のプロバイダを指定すると、codexSwitchはアプリを止めずに、終了のしかたを表示して止まります。
+
+本体のアプリで進めていた会話を、Z.aiで続けることもできます。
+
+```bash
+codexSwitch handoff <チャット名/ID>
+```
+
+会話を2つ目のインスタンスへコピーし、Z.aiのモデルで続きを始めます。引き継いだ会話全体がモデルに送られるので、長い会話ほど利用枠を多く使います。詳しくはREADMEを参照してください。
 
 ## サブスク枠で動いていることの確認
 
@@ -287,7 +297,7 @@ UIに出る段               low / high        ← 2段
 none / minimal / low / medium / high / xhigh / max / ultra  → すべて 200
 ```
 
-つまりカタログの申告が実際の対応より狭いだけです。カタログを書き換えれば直ります。
+つまりカタログの申告が実際の対応より狭いだけです。カタログを書き換えれば直ります。codexSwitchは、Z.aiからカタログを取得したときに次の書き換えを自動で行います。
 
 ```json
 "supported_reasoning_levels": [
@@ -309,12 +319,12 @@ codex -p zai-glm -c model_reasoning_effort="max"
 `default_reasoning_level`を`high`にしているのは、UIで選べない`max`を既定にしておくと表示と実際がずれるためです。
 
 :::message
-カタログを取り直すとこの修正は消えます。`GET /api/v1/models`で更新したら、書き換えも再適用してください。
+カタログを手で取り直すと、この修正は消えます。codexSwitchで取り直すときは、`~/.codex-switch/zai_models.json`を消してから`codexSwitch -zai`で起動してください。取得と書き換えをやり直します。
 :::
 
 ### アプリ側はプロバイダを起動時にしか読まない
 
-`model_provider`は起動時に解決されます。設定を書き換えても、開いているウィンドウには反映されません。切り替えるときは一度終了してから起動し直してください。
+`model_provider`は起動時に解決されます。設定を書き換えても、開いているウィンドウには反映されません。切り替えるときは一度終了してから起動し直してください。ウィンドウを閉じるだけでは終了しない点に注意してください（macOSでは⌘Q）。
 
 ## Q&A
 
@@ -328,7 +338,7 @@ codex -p zai-glm -c model_reasoning_effort="max"
 
 ### model_catalog_jsonは自分で書く必要がありますか
 
-不要です。`GET /api/v1/models`がCodex形式のカタログをそのまま返すので、保存して指定するだけです。モデルが増えたら取り直せば追従できます。
+不要です。`GET /api/v1/models`がCodex形式のカタログをそのまま返すので、保存して指定するだけです。codexSwitchを使えば、取得も自動です。モデルが増えたら、`~/.codex-switch/zai_models.json`を消して起動し直せば取り直します。
 
 ### OpenCodeやClaude Codeと併用できますか
 
@@ -373,4 +383,4 @@ Claudeを使いたい場合は、Claude Code CLIをそのまま使うのが素�
 
 - [Z.AI Developer Document — Codex](https://docs.z.ai/devpack/tool/codex)
 - [Z.AI Developer Document — GLM Coding Plan](https://docs.z.ai/devpack/overview)
-- [CodexにOpenRouterを足して、ChatGPT枠を保ったまま別モデルを使う](https://zenn.dev/ttokunaga-ja/articles/2026-09-22-codex-openrouter-custom-provider)
+- [CodexにOpenRouterを足して、ChatGPT枠を保ったまま別モデルを使う](https://zenn.dev/ttokunaga-ja/articles/2026-09-22-codex-switch-openrouter)

@@ -3,8 +3,15 @@ title: "CodexにOpenRouterを足して、ChatGPT枠を保ったまま別モデ�
 emoji: "🔀"
 type: "tech"
 topics: ["codex", "openrouter", "ai", "開発環境", "llm"]
-published: false
+published: true
 ---
+
+Codexを使っていて、こんな経験はありませんか。
+
+- 作業の途中で、Codexの週間の利用上限を使い切ってしまった
+- Appshots（前面のウィンドウを撮って会話に添える機能）やブラウザー、Computer Useが便利で、ほかのモデルでも使いたいと思った
+
+この記事では、Codexアプリの画面や機能はそのままに、中で動くモデルだけをOpenRouterのモデルに替える方法を紹介します。ChatGPTの利用枠は使わず、本体のCodexにも手を加えません。Computer Useやブラウザー操作に使うツールがOpenRouterのモデルにもそのまま渡ること、画像入力が通ることも、後半で確かめています。
 
 ## 結論――プロバイダを足すだけ。ただしアプリは別インスタンスが要る
 
@@ -21,9 +28,15 @@ CodexはOpenAI公式の`model_providers`機構を持っていて、OpenRouterの
 ただしCodexアプリ（デスクトップ版）にはプロファイルを選ぶUIがありません。アプリでも使いたい場合は、`CODEX_HOME`を分けた**2つ目のインスタンス**を立てます。本体のアプリと設定には一切触れずに済みます。
 
 ```text
-~/.codex      → ChatGPT / OpenAIモデル     （本体・無傷のまま）
-~/.codex-or   → OpenRouter                 （2つ目のインスタンス）
+~/.codex        → ChatGPT / OpenAIモデル     （本体・無傷のまま）
+~/.codex-switch → OpenRouter                 （2つ目のインスタンス）
 ```
+
+実際に並べると次のようになります。左が2つ目のインスタンス、右が本体です。画面の2つ目のインスタンスはZ.ai Coding Planで起動したものですが、OpenRouterでも同じように並びます。
+
+![macOSで、2つ目のインスタンス（左、Z.ai Coding Planのglm-5.3-flash）と本体のCodexアプリ（右、ChatGPTのモデル）を並べて起動した画面](/images/2026-09-22-codex-switch-openrouter/codex-app-two-instances-macos.png)
+
+![Windows版のCodexアプリでも、2つ目のインスタンス（左）と本体（右）を並べて起動できる](/images/2026-09-22-codex-switch-openrouter/codex-app-two-instances-windows.png)
 
 この記事では、CLIで動かす最小手順、アプリで動かす手順、無料モデルの実測、そして踏んだ落とし穴を順に書きます。
 
@@ -135,24 +148,65 @@ exec
 
 Codexアプリにはプロファイルを選ぶUIがありません。アプリでOpenRouterを使うには、`CODEX_HOME`を分けた2つ目のインスタンスを立てます。
 
-### 1. 隔離ホームを作る
+準備と起動には、このために作ったツール[codexSwitch](https://github.com/ttokunaga-ja/codexSwitch)を使います。macOSとWindowsで同じコマンドで動きます（個人で作った非公式のツールで、OpenAIとは関係ありません）。手順は4つです。
+
+### 1. codexSwitchを入れる
+
+macOSでは次のようにインストールします。Rustが必要です。Windowsの手順はREADMEにあります。
 
 ```bash
-mkdir -p ~/.codex-or
-mkdir -p "$HOME/Library/Application Support/Codex OpenRouter/user-data"
+git clone https://github.com/ttokunaga-ja/codexSwitch.git
+cd codexSwitch
+./install.sh   # ~/.local/bin/codexSwitch に入ります
 ```
 
-`~/.codex-or`がCodexの設定・履歴を持つ場所、`user-data`がElectron（アプリの外側）のプロファイル置き場です。2つとも本体とは別になります。
+2つ目のインスタンスは、Codexの設定・履歴を`~/.codex-switch`に、Electron（アプリの外側）のプロファイルを`~/Library/Application Support/codex-switch/user-data`に持ちます。どちらも本体とは別の場所で、次の準備と初回の起動で作られます。
 
-### 2. config.tomlを置く
+### 2. 準備する
 
-`~/.codex-or/config.toml`を新規作成します。ここでは**グローバルの`model_provider`を設定します**。このインスタンスはOpenRouter専用だからです。
+```bash
+codexSwitch init
+```
+
+2つ目のインスタンスの設定（`~/.codex-switch/config.toml`）とモデル一覧（`~/.codex-switch/model_catalog.json`）を作り、最後にAPIキーの置き場所を案内します。何度実行しても安全で、あるものはそのまま使い、足りないものだけを足します。
+
+### 3. APIキーを入れる
+
+最小手順1の1.で`~/.codex/openrouter.key`に置いたキーが、そのまま使われます。まだの場合は、initの途中で貼り付けるか（画面には表示されません）、案内されたファイルに入れてください。
+
+### 4. 起動する
+
+```bash
+codexSwitch -openrouter
+```
+
+2つ目のウィンドウが開き、モデルピッカーにカタログで指定したモデルが並びます。本体のウィンドウは開いたままで構いません。次からは`codexSwitch`だけで、前回と同じ内容で起動します。モデルを指定するときは`codexSwitch -openrouter --model inclusionai/ling-3.0-flash-vl:free`のようにします。
+
+起動するときは、OpenRouterのキーだけを確かめます。入っていなければ、キーのファイルの場所と入れ方を表示して止まります。
+
+`-openrouter` / `-zai`とモデルは起動時にしか読まれません。変えるときは、アプリを終了してから実行し直します。ウィンドウを閉じるだけでは終了しないので、macOSでは⌘Q、Windowsでは通知領域のアイコンを右クリックして「Exit」で終了してください。
+
+codexSwitchがmacOSで内部的に実行しているのは、次のコマンドです。`open --env`はmacOSの`open`コマンドの機能で、`open --help`に記載があります。
+
+```bash
+open -n \
+  --env "CODEX_HOME=$HOME/.codex-switch" \
+  --env "CODEX_ELECTRON_USER_DATA_PATH=$HOME/Library/Application Support/codex-switch/user-data" \
+  /Applications/ChatGPT.app \
+  --args --user-data-dir="$HOME/Library/Application Support/codex-switch/user-data"
+```
+
+### initが作る設定
+
+`~/.codex-switch/config.toml`は、`codexSwitch -openrouter`で起動したあと次のようになっています（macOSの例）。ここでは**グローバルの`model_provider`を設定しています**。`CODEX_HOME`が本体と分かれているので、本体の既定には影響しません。
 
 ```toml
+# >>> codexSwitch managed: active provider >>>
 model_provider = "openrouter"
 model = "nex-agi/nex-n2.5-pro:free"
+model_catalog_json = "/Users/yourname/.codex-switch/model_catalog.json"
 model_reasoning_effort = "low"
-model_catalog_json = "/Users/yourname/.codex-or/model_catalog.json"
+# <<< codexSwitch managed: active provider <<<
 
 [model_providers.openrouter]
 name = "OpenRouter"
@@ -165,6 +219,8 @@ command = "/bin/cat"
 args = ["/Users/yourname/.codex/openrouter.key"]
 ```
 
+実際のファイルには、[別記事](https://zenn.dev/ttokunaga-ja/articles/2026-09-23-codex-switch-zai-coding-plan)で使うZ.aiの定義も同じ形で入っています。先頭の2行のコメントで囲んだ部分（管理ブロック）は、codexSwitchが起動のたびに書き換えます。この2行は消さないでください。
+
 `requires_openai_auth = false`がポイントです。この隔離ホームにはChatGPTの認証情報がないため、これを指定しないとアプリがサインインを要求します。指定すると、アプリが参照する内部サーバが次のように応答するようになります。
 
 ```json
@@ -173,11 +229,11 @@ args = ["/Users/yourname/.codex/openrouter.key"]
 
 アカウントは空のまま、サインイン不要で使える状態です。APIキーだけが認証情報になります。
 
-キーのパスは本体（`~/.codex/openrouter.key`）を指しておくと、キーの置き場が1箇所で済みます。
+キーは設定ファイルに書かず、本体のCLIと同じ`~/.codex/openrouter.key`から読みます。キーの置き場が1箇所で済みます。
 
-### 3. モデルピッカーの中身を決める
+### モデルピッカーの中身
 
-`model_catalog_json`に、モデル一覧を書いたJSONファイルのパスを指定します。これがアプリのモデル選択メニューの中身になります。
+`model_catalog_json`で指定したファイル（`~/.codex-switch/model_catalog.json`）が、アプリのモデル選択メニューの中身になります。initは、Codexのツール呼び出しが通ることを確かめた無料モデル3つ（後述）でこのファイルを作ります。モデルを足すときは、このファイルを編集します。
 
 このカタログはスキーマが厳しく、必須のフィールドが1つでも欠けると`missing field shell_type`のようなエラーで読み込まれません。1モデルにつき、次の形で書いてください。
 
@@ -215,7 +271,7 @@ args = ["/Users/yourname/.codex/openrouter.key"]
 }
 ```
 
-この形は、Z.aiがCodex向けに配信しているカタログ（[別記事](https://zenn.dev/ttokunaga-ja/articles/2026-09-23-codex-zai-coding-plan)で扱います）に合わせたものです。OpenAI以外のモデルを想定して作られているので、そのまま雛形に使えます。
+この形は、Z.aiがCodex向けに配信しているカタログ（[別記事](https://zenn.dev/ttokunaga-ja/articles/2026-09-23-codex-switch-zai-coding-plan)で扱います）に合わせたものです。OpenAI以外のモデルを想定して作られているので、そのまま雛形に使えます。
 
 :::message alert
 **`codex debug models`の出力を複製してカタログを作らないでください。** そこに並んでいるのはOpenAIのモデルの定義で、OpenAIのモデル専用の`"tool_mode": "code_mode_only"`が含まれています。新しい版のCodexはこの指定に従い、ツールを1つずつではなくJavaScript実行用の入れ物（`namespace`）にまとめて送るため、OpenAI以外のモデルはリクエストを受け付けません。
@@ -225,48 +281,13 @@ args = ["/Users/yourname/.codex/openrouter.key"]
 
 `input_modalities`は正しく申告してください。画像を持たないモデルに`image`を入れると、Codexが画像を送れると誤判断します。`visibility`を`"hide"`にすると、カタログには残したままピッカーから隠せます。
 
-### 4. 起動スクリプトを置く
-
-毎回打つには長いので、スクリプトにします。
-
-```bash
-cat > ~/.local/bin/codex-or <<'SH'
-#!/bin/sh
-set -e
-APP="/Applications/ChatGPT.app"
-OR_HOME="$HOME/.codex-or"
-OR_USERDATA="$HOME/Library/Application Support/Codex OpenRouter/user-data"
-KEY="$HOME/.codex/openrouter.key"
-
-[ -s "$KEY" ] || { echo "codex-or: key is empty -> $KEY" >&2; exit 1; }
-mkdir -p "$OR_HOME" "$OR_USERDATA"
-
-exec /usr/bin/open -n \
-  --env "CODEX_HOME=$OR_HOME" \
-  --env "CODEX_ELECTRON_USER_DATA_PATH=$OR_USERDATA" \
-  "$APP" \
-  --args --user-data-dir="$OR_USERDATA"
-SH
-chmod 755 ~/.local/bin/codex-or
-```
-
-```bash
-codex-or
-```
-
-2つ目のウィンドウが開き、モデルピッカーにカタログで指定したモデルが並びます。本体のウィンドウは開いたままで構いません。
-
-:::message
-`open --env`はmacOSの`open`コマンドの機能です。`open --help`に記載があります。
-:::
-
 ### 二重起動が通る理由
 
 普通、macOSアプリは2つ目のインスタンスが起動しません。ここが通るのは、Codexアプリが`CODEX_ELECTRON_USER_DATA_PATH`を見て挙動を変えているからです。
 
 この環境変数が設定されているときだけ単一インスタンスのロックを取りにいき、ロックはユーザーデータディレクトリごとに分かれます。つまり`--user-data-dir`が違えば別のロックになり、2つ目が起動できます。
 
-これは裏技ではなく、アプリ自身が同じ起動方法を内部に持っています。アプリのバンドルを覗くと、`~/.codex-demo`を別ホームとして第2インスタンスを起動する処理が入っていて、コマンドの形は上のスクリプトとほぼ同じです。
+これは裏技ではなく、アプリ自身が同じ起動方法を内部に持っています。アプリのバンドルを覗くと、`~/.codex-demo`を別ホームとして第2インスタンスを起動する処理が入っていて、コマンドの形は上のコマンドとほぼ同じです。
 
 ## 無料モデルで実際に動かす
 
@@ -461,7 +482,7 @@ codex login status
 # Logged in using ChatGPT
 ```
 
-プロセスを見ても、本体は`~/.codex`、2つ目は`~/.codex-or`を参照していて、混ざっていません。2つ目のウィンドウが「未ログイン」に見えるのは、そのホームに認証情報がないからで、正常な状態です。
+プロセスを見ても、本体は`~/.codex`、2つ目は`~/.codex-switch`を参照していて、混ざっていません。2つ目のウィンドウが「未ログイン」に見えるのは、そのホームに認証情報がないからで、正常な状態です。
 
 ### 本体のモデル一覧にOpenRouterのモデルを並べられますか
 
@@ -471,11 +492,13 @@ codex login status
 
 ### アプリを2つ同時に起動できますか
 
-できます。`--user-data-dir`が違えば別インスタンスとして動きます。本体を開いたまま`codex-or`を実行して問題ありません。
+できます。`--user-data-dir`が違えば別インスタンスとして動きます。本体を開いたまま`codexSwitch -openrouter`を実行して問題ありません。
 
 ### スレッド履歴はどうなりますか
 
 `CODEX_HOME`ごとに独立します。2つ目のインスタンスには本体の会話履歴は出てきません。用途を分けたい場合はむしろ好都合です。
+
+本体の会話を2つ目のインスタンスで続けたいときは、`codexSwitch handoff <チャット名/ID>`で会話をコピーできます。引き継いだ会話全体がモデルに送られるので、長い会話ほど利用量が増えます。
 
 ### 無料モデルだけでコーディングエージェントを回せますか
 
@@ -503,14 +526,14 @@ codex exec --strict-config --ephemeral -s read-only -p or-nex 'hi'
 
 - `model_providers`を足せばOpenRouterは繋がる。`wire_api = "responses"`が必須
 - グローバルの`model_provider`は書き換えず、プロファイルで切り替える
-- アプリで使うなら`CODEX_HOME`と`CODEX_ELECTRON_USER_DATA_PATH`を分けた2つ目のインスタンスを立てる。本体は無傷のまま
+- アプリで使うなら`CODEX_HOME`と`CODEX_ELECTRON_USER_DATA_PATH`を分けた2つ目のインスタンスを立てる。本体は無傷のまま。codexSwitchなら`codexSwitch init`で準備し、`codexSwitch -openrouter`で起動する
 - 1インスタンス＝1プロバイダ。混在はできない
 - モデルカタログはOpenAIのモデル定義を複製せず、最小の形で書く。複製すると新しい版のCodexで動かなくなる
 - 無料モデルでもツール呼び出しと画像入力は通る。ただしupstream側の混雑と日次上限は織り込む
 
 同じ仕組みでZ.aiのCoding Planを繋ぐ方法は別記事に書きました。サブスクの定額枠をCodexから使う話です。
 
-- [Z.ai Coding PlanをCodexアプリで使う](https://zenn.dev/ttokunaga-ja/articles/2026-09-23-codex-zai-coding-plan)
+- [Z.ai Coding PlanをCodexアプリで使う](https://zenn.dev/ttokunaga-ja/articles/2026-09-23-codex-switch-zai-coding-plan)
 
 ## 参考資料
 
