@@ -11,7 +11,7 @@ Codexを使っていて、こんな経験はありませんか。
 - 作業の途中で、Codexの週間の利用上限を使い切ってしまった
 - Appshots（前面のウィンドウを撮って会話に添える機能）やブラウザー、Computer Useが便利で、ほかのモデルでも使いたいと思った
 
-Z.aiのCoding Planを契約しているなら、その定額枠でCodexアプリを動かせます。アプリの画面や機能はそのままに、中で動くモデルだけをZ.aiのGLMに替えます。ChatGPTの利用枠は使わないので、上限に達したあとも同じアプリで作業を続けられます。
+Z.aiのCoding Planを契約しているなら、その定額枠でCodexアプリを動かせます。アプリの画面や機能はそのままに、中で動くモデルだけをZ.aiのGLMに替えます。ChatGPTの利用枠は使わないので、上限に達したあとも同じアプリで作業を続けられます。Appshotsも2つ目のインスタンスでそのまま使えます（Z.aiで画像を受け取れるのは、既定の`glm-5.3-flash`です）。
 
 ## 結論――Codex用のエンドポイントは`/api/v1`
 
@@ -128,7 +128,7 @@ curl -s https://api.z.ai/api/v1/models \
 }
 ```
 
-`shell_type`や`apply_patch_tool_type`といったCodex固有のフィールドまで含まれています。**カタログを自作する必要はありません。**取得したファイルを`model_catalog_json`に指定するだけで使えます。
+`shell_type`や`apply_patch_tool_type`といったCodex固有のフィールドまで含まれています。**カタログを自作する必要はありません**。取得したファイルを`model_catalog_json`に指定するだけで使えます。
 
 配信されているのは次の3モデルでした（執筆時点）。
 
@@ -287,7 +287,7 @@ Z.aiのカタログをそのまま使うと、アプリのEffort選択が「低 
 UIに出る段               low / high        ← 2段
 ```
 
-アプリには`enabled-reasoning-efforts`という内部設定があり、既定値が`["low","medium","high","xhigh","ultra","persistent"]`です。**ここに`max`が入っていません。**そのためZ.aiが申告する3段のうち`max`が落ちて、2段になります。
+アプリには`enabled-reasoning-efforts`という内部設定があり、既定値が`["low","medium","high","xhigh","ultra","persistent"]`です。**ここに`max`が入っていません**。そのためZ.aiが申告する3段のうち`max`が落ちて、2段になります。
 
 この設定はローカルには保存されておらず、内蔵の既定値がそのまま効いています。つまりアプリ側から直す手段はありません。
 
