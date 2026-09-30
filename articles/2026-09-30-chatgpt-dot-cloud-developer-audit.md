@@ -1,12 +1,12 @@
 ---
-title: "dotクラウドの開発性能と対応環境を実測してみた"
+title: "ChatGPTのdotクラウド開発環境はどこまで使える？実測してみた"
 emoji: "☁️"
 type: "tech"
-topics: ["ai", "開発環境", "linux", "ベンチマーク"]
+topics: ["chatgpt", "openai", "ai", "開発環境", "cloud"]
 published: true
 ---
 
-dotのクラウド環境で、どのくらい開発作業ができるのかを確認しました。小規模なビルド・テスト、ローカルHTTP、SQLite・PostgreSQL・Redisは動作しました。Dockerの実行や常駐には制約があります。
+ChatGPTのdotで利用できるクラウド開発環境が、実際の開発作業でどこまで使えるのかを確認しました。小規模なビルド・テスト、ローカルHTTP、SQLite・PostgreSQL・Redisは動作しました。Dockerの実行や常駐には制約があります。
 
 :::message
 2026年9月30日に利用できた環境での実測です。環境や実行条件によって結果は変わります。
