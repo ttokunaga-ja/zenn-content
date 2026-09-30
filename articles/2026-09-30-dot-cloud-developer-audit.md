@@ -110,12 +110,12 @@ CPUの機種比較は、同じ素数計算での参考値です。CPU全体の�
 
 dot側の専用GUIブラウザーで公開ページのリンクを操作し、移動先のIANA「Example Domains」を表示したときの画面です。
 
-![dot側のGUIブラウザーで表示したIANAのExample Domainsページ](/images/dot-cloud-developer-audit/gui-browser.jpg)
+![dot側のGUIブラウザーで表示したIANAのExample Domainsページ](/images/2026-09-30-dot-cloud-developer-audit/gui-browser.jpg)
 *公開ページでのリンク操作後に取得したスクリーンショット。ローカルで開発したWebアプリのE2Eテスト結果ではありません。*
 
 ## Android Studioの起動確認
 
-![クラウド環境で起動したAndroid Studioの開始画面](/images/dot-cloud-developer-audit/android-studio-gui.png)
+![クラウド環境で起動したAndroid Studioの開始画面](/images/2026-09-30-dot-cloud-developer-audit/android-studio-gui.png)
 
 Android StudioのGUI起動と、別途コマンドラインでの未署名APK生成に成功しました。IDE内でのビルドやエミュレーター実行まで確認した結果ではありません。
 
