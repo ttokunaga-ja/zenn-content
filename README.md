@@ -28,3 +28,15 @@ and their referenced images into the sibling `../portfolio` repository, commits 
 generated changes, and pushes Portfolio's `main` branch. The sync stops if Portfolio's
 generated blog folders contain uncommitted changes, so hand-edited content is never
 overwritten silently.
+
+Every article must explicitly set `published: true` or `published: false`.
+Invalid frontmatter or missing referenced images stop synchronization before
+existing Portfolio content is removed. Staged Portfolio changes also stop the
+sync so unrelated work cannot enter the generated commit.
+
+For local generation and validation without committing or pushing:
+
+```bash
+node scripts/sync-portfolio.mjs --no-commit
+node --test tests/*.test.mjs
+```

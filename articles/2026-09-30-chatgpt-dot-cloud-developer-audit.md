@@ -3,7 +3,7 @@ title: "ChatGPTのdotクラウド開発環境はどこまで使える？実測�
 emoji: "☁️"
 type: "tech"
 topics: ["chatgpt", "openai", "ai", "開発環境", "cloud"]
-published: 
+published: true
 ---
 
 ChatGPTのdotで利用できるクラウド開発環境が、実際の開発作業でどこまで使えるのかを確認しました。小規模なビルド・テスト、ローカルHTTP、SQLite・PostgreSQL・Redisは動作しました。Dockerの実行や常駐には制約があります。

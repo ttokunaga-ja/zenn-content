@@ -2,6 +2,7 @@ import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promi
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { parseZennFrontmatter } from "./zenn-frontmatter.mjs";
 
 const zennRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const workspaceRoot = dirname(zennRoot);
@@ -12,6 +13,7 @@ const targetArticlesRoot = join(portfolioRoot, "content", "ja", "blog");
 const targetImagesRoot = join(portfolioRoot, "public", "images", "blog");
 const zennProfile = "t_tokunaga";
 const skipPush = process.argv.includes("--no-push");
+const skipCommit = process.argv.includes("--no-commit");
 
 function run(command, args, cwd) {
   return execFileSync(command, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -28,6 +30,9 @@ function hasStagedChanges() {
 }
 
 function assertCleanPortfolioTargets() {
+  if (hasStagedChanges()) {
+    throw new Error("Portfolio にステージ済みの変更があります。同期コミットへの混入を防ぐため停止します。");
+  }
   const status = run("git", ["status", "--porcelain", "--", "content/ja/blog", "public/images/blog"], portfolioRoot);
   if (status) {
     throw new Error(
@@ -37,20 +42,11 @@ function assertCleanPortfolioTargets() {
 }
 
 function parseZennArticle(raw, file) {
-  const matched = raw.replace(/^\uFEFF/, "").match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-  if (!matched) throw new Error(`${file} の frontmatter を読み取れません。`);
+  return parseZennFrontmatter(raw, file);
+}
 
-  const [, frontmatter, body] = matched;
-  const get = (key) => frontmatter.match(new RegExp(`^${key}:\\s*(.+)$`, "m"))?.[1]?.trim() ?? "";
-  const titleValue = get("title");
-  const title = titleValue.replace(/^"|"$/g, "").replace(/\\"/g, '"');
-  const published = get("published") === "true";
-  const topicsValue = get("topics");
-  const topics = [...topicsValue.matchAll(/"([^"\\]*(?:\\.[^"\\]*)*)"|([^,\[\]\s][^,\]]*)/g)]
-    .map((match) => (match[1] ?? match[2] ?? "").trim())
-    .filter(Boolean);
-
-  return { body, published, title, topics };
+function imagePathsFrom(body) {
+  return new Set([...body.matchAll(/!\[[^\]]*\]\((\/images\/[^)\s]+)(?:\s+[^)]*)?\)/g)].map((match) => match[1]));
 }
 
 function abstractFrom(body) {
@@ -79,13 +75,11 @@ async function exists(path) {
   }
 }
 
-async function syncArticle(fileName) {
+async function syncArticle(fileName, article) {
   const slug = basename(fileName, ".md");
-  const raw = await readFile(join(articlesRoot, fileName), "utf8");
-  const article = parseZennArticle(raw, fileName);
   if (!article.published) return;
 
-  const imagePaths = new Set([...article.body.matchAll(/!\[[^\]]*\]\((\/images\/[^)\s]+)(?:\s+[^)]*)?\)/g)].map((match) => match[1]));
+  const imagePaths = imagePathsFrom(article.body);
   let body = article.body;
   for (const imagePath of imagePaths) {
     const sourceRelative = imagePath.replace(/^\/images\//, "");
@@ -121,14 +115,31 @@ async function main() {
   assertCleanPortfolioTargets();
 
   const articleFiles = (await readdir(articlesRoot)).filter((file) => file.endsWith(".md")).sort();
+  // Validate every article and referenced image before changing existing output.
+  const articles = new Map();
+  for (const file of articleFiles) {
+    const article = parseZennArticle(await readFile(join(articlesRoot, file), "utf8"), file);
+    articles.set(file, article);
+    if (!article.published) continue;
+    for (const imagePath of imagePathsFrom(article.body)) {
+      const sourceRelative = imagePath.replace(/^\/images\//, "");
+      if (!(await exists(join(sourceImagesRoot, sourceRelative)))) {
+        throw new Error(`${file} が参照する画像がありません: images/${sourceRelative}`);
+      }
+    }
+  }
   await rm(targetArticlesRoot, { recursive: true, force: true });
   await rm(targetImagesRoot, { recursive: true, force: true });
   await mkdir(targetArticlesRoot, { recursive: true });
 
   for (const file of articleFiles) {
-    await syncArticle(file);
+    await syncArticle(file, articles.get(file));
   }
 
+  if (skipCommit) {
+    console.log("Portfolio: ローカル同期を完了しました（--no-commit、commit/pushなし）。");
+    return;
+  }
   run("git", ["add", "content/ja/blog", "public/images/blog"], portfolioRoot);
   if (!hasStagedChanges()) {
     console.log("Portfolio: Zenn記事の差分はありません。");

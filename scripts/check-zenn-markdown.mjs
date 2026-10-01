@@ -1,6 +1,7 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseZennFrontmatter } from "./zenn-frontmatter.mjs";
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const articlesRoot = join(repositoryRoot, "articles");
@@ -185,7 +186,14 @@ const shouldFix = process.argv.includes("--fix");
 for (const fileName of articleFiles) {
   const articlePath = join(articlesRoot, fileName);
   const source = await readFile(articlePath, "utf8");
-  if (!/^published:\s*true$/m.test(source)) continue;
+  let article;
+  try {
+    article = parseZennFrontmatter(source, fileName);
+  } catch (error) {
+    findings.push({ fileName, line: 1, column: 1, message: error.message, sample: "frontmatter" });
+    continue;
+  }
+  if (!article.published) continue;
   const normalizedSource = shouldFix ? normalizeArticle(source) : source;
   if (shouldFix && normalizedSource !== source) {
     await writeFile(articlePath, normalizedSource, "utf8");
