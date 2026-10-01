@@ -114,26 +114,26 @@ CPUの機種比較は、同じ素数計算での参考値です。CPU全体の�
 
 dot側の専用GUIブラウザーで公開ページのリンクを操作し、移動先のIANA「Example Domains」を表示したときの画面です。
 
-![dot側のGUIブラウザーで表示したIANAのExample Domainsページ](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/gui-browser.jpg)
+![dot側のGUIブラウザーで表示したIANAのExample Domainsページ](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/browser-iana-example-domains.jpg)
 *公開ページでのリンク操作後に取得したスクリーンショット。ローカルで開発したWebアプリのE2Eテスト結果ではありません。*
 
 ## Android Studioの起動確認
 
-![クラウド環境で起動したAndroid Studioの開始画面](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/android-studio-gui.png)
+![クラウド環境で起動したAndroid Studioの開始画面](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/android-studio-welcome.png)
 
 Android StudioのGUI起動と、別途コマンドラインでの未署名APK生成に成功しました。IDE内でのビルドやエミュレーター実行まで確認した結果ではありません。
 
 ## Blenderの動作確認
 
-![クラウドのBlenderで立方体を編集した画面](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/blender-gui.png)
+![クラウドのBlenderで立方体を編集した画面](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/blender-cube-edit.png)
 
-![CyclesのCPUレンダリング結果](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/blender-cpu.png)
+![CyclesのCPUレンダリング結果](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/blender-cycles-cpu-render.png)
 
 GUIでの編集に加え、別途CPUで画像を生成し、.blendとGLBの保存・再読込を確認しました。GPUレンダリングは未確認です。
 
 ## Unity Hubの起動確認
 
-![クラウドで起動したUnity Hubのサインイン画面](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/unity-hub-gui.png)
+![クラウドで起動したUnity Hubのサインイン画面](/images/2026-09-30-chatgpt-dot-cloud-developer-audit/unity-hub-sign-in.png)
 
 Hubの起動成功は、Unity Editorでの制作やゲーム実行ができたことを意味しません。Editor本体の導入とバージョン表示には成功しましたが、GUI起動はアカウントのライセンス確認で停止しました。制作・ビルドには認証後の追加検証が必要です。
 
