@@ -18,7 +18,7 @@ AIモデルを開発や日常の作業に組み込む際、すべてをAPI（従
 ## 📊 利用総額・コスト推移と合計トークン数
 
 :::message
-以下の金額には、ChatGPT PlusやClaude Proなどのサブスクリプション月額料金は含まれていません。あくまで**API単体の従量課金分**です。Claude Proの月払いは税抜\$20、日本の消費税10%を含めて\$22です。日本円は 1 USD = 150円 のざっくり換算です。
+以下の金額には、ChatGPT PlusやClaude Proなどのサブスクリプション月額料金は含まれていません。あくまで**API単体の従量課金分**です。日本円は 1 USD = 150円 のざっくり換算です。
 :::
 
 * **今月のAPI使用総額**: **\$426.59**（約64,000円）
@@ -49,11 +49,9 @@ Claude系モデルをかなり使った月です。大学の大型プロジェ�
 
 ただ、長いコンテキストを何度も投げるとコストが一気に伸びることも分かります。品質には満足している一方で、API課金のまま使い続けるには負担が大きくなってきました。
 
-![Anthropic ConsoleのUsageダッシュボードスクリーンショット](/images/2026-04-01-ai-model-stack-cost-breakdown-2026-03/anthropic-usage.png)
-*2026年3月のAnthropic API利用量です*
+![Anthropic APIの使用状況](/images/2026-04-01-ai-model-stack-cost-breakdown-2026-03/anthropic-usage.png)
 
-![Anthropic ConsoleのCostダッシュボードスクリーンショット](/images/2026-04-01-ai-model-stack-cost-breakdown-2026-03/anthropic-cost.png)
-*2026年3月のAnthropic APIコストは\$409.64でした*
+![Anthropic APIのコスト](/images/2026-04-01-ai-model-stack-cost-breakdown-2026-03/anthropic-cost.png)
 
 ---
 
