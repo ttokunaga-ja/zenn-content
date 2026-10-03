@@ -121,7 +121,7 @@ jobs:
             echo 'changed=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git -C "$target" -c user.name='zenn-portfolio-sync[bot]' -c user.email='sync@users.noreply.github.com' commit -m "sync: import published Zenn articles from ${GITHUB_SHA:0:12}"
+          git -C "$target" -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "sync: import published Zenn articles from ${GITHUB_SHA:0:12}"
           echo "base=$base" >> "$GITHUB_OUTPUT"
           echo 'changed=true' >> "$GITHUB_OUTPUT"
       - name: Create Portfolio-only GitHub App token

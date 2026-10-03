@@ -23,12 +23,12 @@ Run this once on each development machine after cloning the repository:
 node scripts/install-git-hooks.mjs
 ```
 
-During the Actions transition, the existing pre-push hook still mirrors published
-Zenn articles and their referenced images into the sibling `../portfolio` repository
-when pushing `main`. Keep it installed until an Actions run has updated Portfolio,
-its deployment has succeeded, and the Japanese site has been checked. The sync stops
-if Portfolio's generated blog folders contain uncommitted changes, so hand-edited
-content is not overwritten silently.
+The pre-push hook runs read-only Markdown validation and offline tests on `main`.
+It never generates content, commits, or pushes to Portfolio. GitHub Actions mirrors
+published Zenn articles and their referenced images into Portfolio after a source
+push, so publication does not depend on a local sibling checkout.
+Local previews stop if Portfolio's generated blog folders contain uncommitted
+changes, so hand-edited content is not overwritten silently.
 
 Every article must explicitly set `published: true` or `published: false`.
 Invalid frontmatter or missing referenced images stop synchronization before
@@ -49,7 +49,13 @@ same generated Markdown and image bytes:
 node scripts/sync-portfolio.mjs --source-root=/absolute/path/to/zenn-content --portfolio-root=/absolute/path/to/portfolio --no-commit
 ```
 
-### GitHub Actions cutover
+### GitHub Actions publication
+
+The cutover was completed on 2026-10-03: App synchronization created the Portfolio
+commit, its deployment succeeded, and the live Japanese article and all five added
+images were verified. A repeated no-diff sync skipped publication.
+App `zenn-portfolio-sync-ttokunaga-ja` (ID `5171935`) is installed only on Portfolio;
+the source repository variable `ZENN_PORTFOLIO_SYNC_ENABLED` is `true`.
 
 `.github/workflows/sync-portfolio.yml` runs on relevant `main` changes, manual
 dispatch, and a daily reconciliation schedule. Pushes always run local tests;
@@ -62,7 +68,7 @@ there is a content diff. It commits only `content/ja/blog` and
 stops; a later run or manual dispatch reconciles it. An empty diff causes no
 commit or deployment.
 
-To enable it, the repository owner should:
+For a new installation, the repository owner should:
 
 1. Open [GitHub App settings](https://github.com/settings/apps/new), register a
    new App under `ttokunaga-ja`, give it the Zenn repository URL as Homepage,
@@ -94,6 +100,5 @@ Gemini credentials, translation state, and Cloudflare credentials stay in
 Portfolio. Translation calls remain controlled by Portfolio's separate
 `BLOG_TRANSLATION_ENABLED` setting.
 
-After the first successful Actions sync, Portfolio deployment, and live Japanese
-article/image check, remove the local publishing behavior from the Zenn pre-push
-hook in a separate commit. Local `--no-commit` previews should remain available.
+The local publishing hook has been retired. Keep `--no-commit` previews for local
+validation. Do not reintroduce automatic local cross-repository pushes.

@@ -8,6 +8,13 @@ import { parseZennFrontmatter } from "../scripts/zenn-frontmatter.mjs";
 
 const article = (publication, body = "本文") => `---\ntitle: "Test"\ntopics: ["test"]\n${publication}\n---\n${body}\n`;
 
+test("pre-push validates locally without publishing to Portfolio", async () => {
+  const hook = await readFile(new URL("../.githooks/pre-push", import.meta.url), "utf8");
+  assert.match(hook, /node "\$repo_root\/scripts\/check-zenn-markdown\.mjs"/);
+  assert.match(hook, /exec node --test "\$repo_root"\/tests\/\*\.test\.mjs/);
+  assert.doesNotMatch(hook, /sync-portfolio\.mjs|git\s+(?:-C\s+\S+\s+)?(?:push|commit|add)\b/);
+});
+
 test("publication must be an explicit unique boolean, without consuming the next line", () => {
   assert.equal(parseZennFrontmatter(article("published: true"), "a.md").published, true);
   assert.equal(parseZennFrontmatter(article("published: false"), "a.md").published, false);
