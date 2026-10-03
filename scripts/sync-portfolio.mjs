@@ -1,12 +1,21 @@
-import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import { cp, lstat, mkdir, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { parseZennFrontmatter } from "./zenn-frontmatter.mjs";
 
-const zennRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const workspaceRoot = dirname(zennRoot);
-const portfolioRoot = join(workspaceRoot, "portfolio");
+function option(name, fallback) {
+  const prefix = `${name}=`;
+  const values = process.argv.slice(2).filter((arg) => arg.startsWith(prefix));
+  if (values.length > 1) throw new Error(`${name} は一度だけ指定してください。`);
+  const value = values[0]?.slice(prefix.length);
+  if (value !== undefined && (!value || !isAbsolute(value))) throw new Error(`${name} には絶対パスを指定してください。`);
+  return value ? resolve(value) : fallback;
+}
+
+const defaultZennRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const zennRoot = option("--source-root", defaultZennRoot);
+const portfolioRoot = option("--portfolio-root", join(dirname(zennRoot), "portfolio"));
 const articlesRoot = join(zennRoot, "articles");
 const sourceImagesRoot = join(zennRoot, "images");
 const targetArticlesRoot = join(portfolioRoot, "content", "ja", "blog");
@@ -41,6 +50,14 @@ function assertCleanPortfolioTargets() {
   }
 }
 
+function stageChangedTargets() {
+  for (const path of ["content/ja/blog", "public/images/blog"]) {
+    if (run("git", ["status", "--porcelain", "--untracked-files=all", "--", path], portfolioRoot)) {
+      run("git", ["add", "-A", "--", path], portfolioRoot);
+    }
+  }
+}
+
 function parseZennArticle(raw, file) {
   return parseZennFrontmatter(raw, file);
 }
@@ -68,11 +85,60 @@ function yamlString(value) {
 
 async function exists(path) {
   try {
-    await stat(path);
+    await lstat(path);
     return true;
   } catch {
     return false;
   }
+}
+
+async function assertRegularFileInside(root, sourceRelative, label) {
+  if (!sourceRelative || sourceRelative.includes("\\") || sourceRelative.includes("\0") ||
+      sourceRelative.split("/").some((part) => !part || part === "." || part === "..")) {
+    throw new Error(`${label} のパスが不正です: ${sourceRelative}`);
+  }
+  if (!(await exists(root))) throw new Error(`${label}がありません: ${sourceRelative}`);
+  const rootInfo = await lstat(root);
+  if (rootInfo.isSymbolicLink() || !rootInfo.isDirectory()) throw new Error(`${label} の画像ディレクトリが不正です: ${root}`);
+  const rootReal = await realpath(root);
+  const path = resolve(rootReal, sourceRelative);
+  const inside = relative(rootReal, path);
+  if (!inside || inside.startsWith(`..${sep}`) || inside === ".." || isAbsolute(inside)) {
+    throw new Error(`${label} が ${root} の外を参照しています: ${sourceRelative}`);
+  }
+  let current = root;
+  for (const component of sourceRelative.split("/")) {
+    current = join(current, component);
+    let info;
+    try {
+      info = await lstat(current);
+    } catch (error) {
+      if (error.code === "ENOENT") throw new Error(`${label}がありません: ${sourceRelative}`);
+      throw error;
+    }
+    if (info.isSymbolicLink()) throw new Error(`${label} にシンボリックリンクは使えません: ${sourceRelative}`);
+  }
+  if (!(await lstat(path)).isFile()) throw new Error(`${label} は通常ファイルではありません: ${sourceRelative}`);
+  return path;
+}
+
+async function assertSafeTargetRoots() {
+  for (const targetRoot of [targetArticlesRoot, targetImagesRoot]) {
+    let current = portfolioRoot;
+    for (const component of relative(portfolioRoot, targetRoot).split(sep)) {
+      current = join(current, component);
+      if (await exists(current)) {
+        const info = await lstat(current);
+        if (info.isSymbolicLink()) throw new Error(`同期先にシンボリックリンクがあります: ${current}`);
+        if (!info.isDirectory()) throw new Error(`同期先がディレクトリではありません: ${current}`);
+      }
+    }
+  }
+}
+
+function isInsideOrSame(parent, child) {
+  const rel = relative(parent, child);
+  return !rel || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
 }
 
 async function syncArticle(fileName, article) {
@@ -83,10 +149,7 @@ async function syncArticle(fileName, article) {
   let body = article.body;
   for (const imagePath of imagePaths) {
     const sourceRelative = imagePath.replace(/^\/images\//, "");
-    const sourcePath = join(sourceImagesRoot, sourceRelative);
-    if (!(await exists(sourcePath))) {
-      throw new Error(`${fileName} が参照する画像がありません: images/${sourceRelative}`);
-    }
+    const sourcePath = await assertRegularFileInside(sourceImagesRoot, sourceRelative, `${fileName} が参照する画像`);
 
     const targetRelative = join(slug, sourceRelative).replaceAll("\\", "/");
     const targetPath = join(targetImagesRoot, targetRelative);
@@ -111,10 +174,35 @@ async function syncArticle(fileName, article) {
 }
 
 async function main() {
+  const known = ["--no-push", "--no-commit"];
+  for (const arg of process.argv.slice(2)) {
+    if (!known.includes(arg) && !arg.startsWith("--source-root=") && !arg.startsWith("--portfolio-root=")) {
+      throw new Error(`不明なオプション: ${arg}`);
+    }
+  }
   if (!(await exists(portfolioRoot))) throw new Error(`Portfolio リポジトリが見つかりません: ${portfolioRoot}`);
+  const sourceReal = await realpath(zennRoot);
+  const targetReal = await realpath(portfolioRoot);
+  if (isInsideOrSame(sourceReal, targetReal) || isInsideOrSame(targetReal, sourceReal)) {
+    throw new Error("Zenn と Portfolio のルートが重複しています。");
+  }
+  const gitRoot = await realpath(run("git", ["rev-parse", "--show-toplevel"], portfolioRoot));
+  if (gitRoot !== targetReal) throw new Error(`Portfolio のルートを指定してください: ${portfolioRoot}`);
+  const articlesInfo = await lstat(articlesRoot);
+  if (articlesInfo.isSymbolicLink() || !articlesInfo.isDirectory()) {
+    throw new Error(`記事ディレクトリが不正です: ${articlesRoot}`);
+  }
   assertCleanPortfolioTargets();
+  await assertSafeTargetRoots();
 
-  const articleFiles = (await readdir(articlesRoot)).filter((file) => file.endsWith(".md")).sort();
+  const articleEntries = await readdir(articlesRoot, { withFileTypes: true });
+  for (const entry of articleEntries) {
+    if (!entry.name.endsWith(".md")) continue;
+    if (!entry.isFile()) throw new Error(`記事は通常ファイルである必要があります: ${entry.name}`);
+    const slug = basename(entry.name, ".md");
+    if (!/^[a-z0-9_-]+$/.test(slug)) throw new Error(`記事の slug が不正です: ${entry.name}`);
+  }
+  const articleFiles = articleEntries.filter((entry) => entry.name.endsWith(".md")).map((entry) => entry.name).sort();
   // Validate every article and referenced image before changing existing output.
   const articles = new Map();
   for (const file of articleFiles) {
@@ -123,9 +211,7 @@ async function main() {
     if (!article.published) continue;
     for (const imagePath of imagePathsFrom(article.body)) {
       const sourceRelative = imagePath.replace(/^\/images\//, "");
-      if (!(await exists(join(sourceImagesRoot, sourceRelative)))) {
-        throw new Error(`${file} が参照する画像がありません: images/${sourceRelative}`);
-      }
+      await assertRegularFileInside(sourceImagesRoot, sourceRelative, `${file} が参照する画像`);
     }
   }
   await rm(targetArticlesRoot, { recursive: true, force: true });
@@ -140,7 +226,7 @@ async function main() {
     console.log("Portfolio: ローカル同期を完了しました（--no-commit、commit/pushなし）。");
     return;
   }
-  run("git", ["add", "content/ja/blog", "public/images/blog"], portfolioRoot);
+  stageChangedTargets();
   if (!hasStagedChanges()) {
     console.log("Portfolio: Zenn記事の差分はありません。");
     return;

@@ -23,11 +23,12 @@ Run this once on each development machine after cloning the repository:
 node scripts/install-git-hooks.mjs
 ```
 
-After that, pushing the `main` branch automatically mirrors published Zenn articles
-and their referenced images into the sibling `../portfolio` repository, commits the
-generated changes, and pushes Portfolio's `main` branch. The sync stops if Portfolio's
-generated blog folders contain uncommitted changes, so hand-edited content is never
-overwritten silently.
+During the Actions transition, the existing pre-push hook still mirrors published
+Zenn articles and their referenced images into the sibling `../portfolio` repository
+when pushing `main`. Keep it installed until an Actions run has updated Portfolio,
+its deployment has succeeded, and the Japanese site has been checked. The sync stops
+if Portfolio's generated blog folders contain uncommitted changes, so hand-edited
+content is not overwritten silently.
 
 Every article must explicitly set `published: true` or `published: false`.
 Invalid frontmatter or missing referenced images stop synchronization before
@@ -40,3 +41,59 @@ For local generation and validation without committing or pushing:
 node scripts/sync-portfolio.mjs --no-commit
 node --test tests/*.test.mjs
 ```
+
+CI or a separate checkout can pass explicit absolute paths while preserving the
+same generated Markdown and image bytes:
+
+```bash
+node scripts/sync-portfolio.mjs --source-root=/absolute/path/to/zenn-content --portfolio-root=/absolute/path/to/portfolio --no-commit
+```
+
+### GitHub Actions cutover
+
+`.github/workflows/sync-portfolio.yml` runs on relevant `main` changes, manual
+dispatch, and a daily reconciliation schedule. Pushes always run local tests;
+cross-repository publishing stays inactive until the Zenn repository variable
+`ZENN_PORTFOLIO_SYNC_ENABLED` is set to `true`. The workflow
+validates a clean Portfolio checkout without credentials, repeats generation
+against the current Portfolio `main`, and creates a GitHub App token only when
+there is a content diff. It commits only `content/ja/blog` and
+`public/images/blog`. If either repository advances during the run, the push
+stops; a later run or manual dispatch reconciles it. An empty diff causes no
+commit or deployment.
+
+To enable it, the repository owner should:
+
+1. Open [GitHub App settings](https://github.com/settings/apps/new), register a
+   new App under `ttokunaga-ja`, give it the Zenn repository URL as Homepage,
+   disable Webhook delivery, and grant only repository `Contents: Read and write`
+   permission (GitHub adds Metadata read permission automatically). Restrict
+   installation to this account.
+2. Install the App with **Only select repositories** and select **portfolio**.
+   Do not install it on Zenn or grant organization-wide access.
+3. Generate the App's private key. In **zenn-content → Settings → Secrets and
+   variables → Actions**, create variable `ZENN_PORTFOLIO_APP_ID` with the App ID
+   and secret `ZENN_PORTFOLIO_APP_PRIVATE_KEY` with the entire PEM. Do not paste
+   the private key into issues, commits, chat, or Portfolio settings.
+4. After reviewing the Zenn `main` publication scope, set the Zenn Actions
+   variable `ZENN_PORTFOLIO_SYNC_ENABLED=true` and run **Sync published Zenn
+   articles to Portfolio** with `workflow_dispatch`. If the current articles
+   were already synchronized by the local pre-push hook, this run will correctly
+   show no diff. An approved later article or image change is needed to verify
+   the App's actual write path. After the App is configured, preview that update
+   locally with `--no-commit`, arrange one source push without the local
+   publishing hook, then check its generated diff, Portfolio deployment, and
+   live Japanese article and image
+   before changing the hook permanently.
+
+The App token is scoped to the `portfolio` repository, not to file paths. The
+workflow checks that the generated diff stays inside the two managed folders
+before committing. The App push to `main` starts Portfolio's existing push
+deployment and translation workflows.
+Gemini credentials, translation state, and Cloudflare credentials stay in
+Portfolio. Translation calls remain controlled by Portfolio's separate
+`BLOG_TRANSLATION_ENABLED` setting.
+
+After the first successful Actions sync, Portfolio deployment, and live Japanese
+article/image check, remove the local publishing behavior from the Zenn pre-push
+hook in a separate commit. Local `--no-commit` previews should remain available.

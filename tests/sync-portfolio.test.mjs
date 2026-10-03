@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -34,7 +34,8 @@ async function fixture(t) {
   execFileSync("git", ["init", "-b", "main", target]);
   execFileSync("git", ["add", "."], { cwd: target });
   execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "-c", "core.hooksPath=/dev/null", "commit", "-m", "fixture"], { cwd: target });
-  const run = (script = "sync-portfolio.mjs") => spawnSync(process.execPath, [join(source, "scripts", script), "--no-commit"], { encoding: "utf8" });
+  const run = (script = "sync-portfolio.mjs", options = []) =>
+    spawnSync(process.execPath, [join(source, "scripts", script), "--no-commit", ...options], { encoding: "utf8" });
   return { source, target, run };
 }
 
@@ -71,6 +72,89 @@ test("local sync restores published article and image without staging or committ
   await assert.rejects(readFile(join(target, "content/ja/blog/draft.md")), { code: "ENOENT" });
   assert.equal(execFileSync("git", ["rev-parse", "HEAD"], { cwd: target, encoding: "utf8" }), before);
   assert.equal(execFileSync("git", ["diff", "--cached", "--name-only"], { cwd: target, encoding: "utf8" }), "");
+});
+
+test("explicit checkouts produce the established frontmatter, body, and image bytes", async (t) => {
+  const { source, target, run } = await fixture(t);
+  await mkdir(join(source, "images"));
+  await writeFile(join(source, "images/a.png"), Buffer.from([0, 1, 2, 255]));
+  await writeFile(join(source, "articles/a.md"), article("published: true", "Alpha\n![image](/images/a.png)\nOmega"));
+  const result = run("sync-portfolio.mjs", [`--source-root=${source}`, `--portfolio-root=${target}`]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(await readFile(join(target, "content/ja/blog/a.md"), "utf8"),
+    '---\ntitle: "Test"\nabstract: "Alpha Omega"\npublishedAt: ""\ncanonicalUrl: "https://zenn.dev/t_tokunaga/articles/a"\ntags:\n  - "test"\n---\nAlpha\n![image](/images/blog/a/a.png)\nOmega\n');
+  assert.deepEqual(await readFile(join(target, "public/images/blog/a/a.png")), Buffer.from([0, 1, 2, 255]));
+});
+
+test("unsafe article and image paths stop before removing existing output", async (t) => {
+  const { source, target, run } = await fixture(t);
+  await mkdir(join(source, "images"));
+  await writeFile(join(source, "images/real.png"), "image");
+  await symlink("real.png", join(source, "images/link.png"));
+  await writeFile(join(source, "articles/a.md"), article("published: true", "![image](/images/link.png)"));
+  assert.equal(run().status, 1);
+  assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
+  await writeFile(join(source, "articles/a.md"), article("published: true", "![image](/images/../outside.png)"));
+  assert.equal(run().status, 1);
+  assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
+  await writeFile(join(source, "articles/a.md"), article("published: false"));
+  await writeFile(join(source, "articles/escape\\name.md"), article("published: true", "![image](/images/real.png)"));
+  assert.equal(run().status, 1);
+  assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
+});
+
+test("overlapping or descendant target root cannot remove generated output", async (t) => {
+  const { source, target, run } = await fixture(t);
+  assert.equal(run("sync-portfolio.mjs", [`--portfolio-root=${source}`]).status, 1);
+  await mkdir(join(target, "nested"));
+  assert.equal(run("sync-portfolio.mjs", [`--portfolio-root=${join(target, "nested")}`]).status, 1);
+  assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
+});
+
+test("article-directory symlinks stop before removing existing output", async (t) => {
+  const { source, target, run } = await fixture(t);
+  await rm(join(source, "articles"), { recursive: true });
+  await mkdir(join(source, "actual-articles"));
+  await symlink("actual-articles", join(source, "articles"));
+  assert.equal(run().status, 1);
+  assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
+});
+
+test("updates and unpublishing remove stale Japanese output while preserving English state", async (t) => {
+  const { source, target, run } = await fixture(t);
+  const commitGenerated = () => {
+    for (const path of ["content/ja/blog", "public/images/blog"]) {
+      const status = execFileSync("git", ["status", "--porcelain", "--", path], { cwd: target, encoding: "utf8" });
+      if (status) execFileSync("git", ["add", "-A", "--", path], { cwd: target });
+    }
+    execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "generated"], { cwd: target });
+  };
+  await mkdir(join(source, "images"));
+  await writeFile(join(source, "images/a.png"), "image");
+  await writeFile(join(source, "articles/a.md"), article("published: true", "first ![image](/images/a.png)"));
+  await mkdir(join(target, "content/en/blog"), { recursive: true });
+  await mkdir(join(target, "translations"), { recursive: true });
+  await writeFile(join(target, "content/en/blog/a.md"), "English sentinel");
+  await writeFile(join(target, "translations/blog-en-state.json"), "state sentinel");
+  assert.equal(run().status, 0);
+  commitGenerated();
+  await writeFile(join(source, "articles/a.md"), article("published: true", "updated body"));
+  assert.equal(run().status, 0);
+  assert.match(await readFile(join(target, "content/ja/blog/a.md"), "utf8"), /updated body/);
+  await assert.rejects(readFile(join(target, "public/images/blog/a/a.png")), { code: "ENOENT" });
+  commitGenerated();
+  await writeFile(join(source, "articles/a.md"), article("published: false", "updated body"));
+  assert.equal(run().status, 0);
+  await assert.rejects(readFile(join(target, "content/ja/blog/a.md")), { code: "ENOENT" });
+  commitGenerated();
+  await rm(join(source, "articles/a.md"));
+  const before = execFileSync("git", ["rev-parse", "HEAD"], { cwd: target, encoding: "utf8" });
+  const result = spawnSync(process.execPath, [join(source, "scripts/sync-portfolio.mjs"), "--no-push"], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /差分はありません/);
+  assert.equal(execFileSync("git", ["rev-parse", "HEAD"], { cwd: target, encoding: "utf8" }), before);
+  assert.equal(await readFile(join(target, "content/en/blog/a.md"), "utf8"), "English sentinel");
+  assert.equal(await readFile(join(target, "translations/blog-en-state.json"), "utf8"), "state sentinel");
 });
 
 test("unrelated staged work blocks synchronization", async (t) => {

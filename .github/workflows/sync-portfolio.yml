@@ -1,0 +1,151 @@
+name: Sync published Zenn articles to Portfolio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - articles/**
+      - images/**
+      - scripts/sync-portfolio.mjs
+      - scripts/zenn-frontmatter.mjs
+      - scripts/check-zenn-markdown.mjs
+      - tests/sync-portfolio.test.mjs
+      - .github/workflows/sync-portfolio.yml
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zenn-portfolio-sync
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.repository == 'ttokunaga-ja/zenn-content' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || vars.ZENN_PORTFOLIO_SYNC_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Test sync preflight and published Markdown
+        run: |
+          node --test tests/*.test.mjs
+          node scripts/check-zenn-markdown.mjs
+      - name: Verify source is still main
+        if: vars.ZENN_PORTFOLIO_SYNC_ENABLED == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest=$(git ls-remote origin refs/heads/main | cut -f1)
+          test -n "$latest"
+          test "$(git rev-parse HEAD)" = "$latest" || { echo 'Source main advanced; a newer run will reconcile.' >&2; exit 1; }
+      - name: Generate and validate in a temporary Portfolio checkout
+        if: vars.ZENN_PORTFOLIO_SYNC_ENABLED == 'true'
+        id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/portfolio"
+          git clone --quiet --depth=1 --branch=main https://github.com/ttokunaga-ja/portfolio.git "$target"
+          node scripts/sync-portfolio.mjs --source-root="$GITHUB_WORKSPACE" --portfolio-root="$target" --no-commit
+          while IFS= read -r -d '' entry; do
+            path="${entry:3}"
+            case "$path" in
+              content/ja/blog/*|public/images/blog/*) ;;
+              *) echo "Unexpected working-tree path: $path" >&2; exit 1 ;;
+            esac
+          done < <(git -C "$target" status --porcelain -z --untracked-files=all)
+          for path in content/ja/blog public/images/blog; do
+            if test -n "$(git -C "$target" status --porcelain --untracked-files=all -- "$path")"; then
+              git -C "$target" add -A -- "$path"
+            fi
+          done
+          git -C "$target" diff --cached --check
+          if git -C "$target" diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    needs: validate
+    if: needs.validate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Regenerate against current Portfolio main
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest=$(git ls-remote origin refs/heads/main | cut -f1)
+          test -n "$latest"
+          test "$(git rev-parse HEAD)" = "$latest" || { echo 'Source main advanced; refusing stale synchronization.' >&2; exit 1; }
+          target="$RUNNER_TEMP/portfolio"
+          git clone --quiet --depth=1 --branch=main https://github.com/ttokunaga-ja/portfolio.git "$target"
+          base=$(git -C "$target" rev-parse HEAD)
+          node scripts/sync-portfolio.mjs --source-root="$GITHUB_WORKSPACE" --portfolio-root="$target" --no-commit
+          while IFS= read -r -d '' entry; do
+            path="${entry:3}"
+            case "$path" in
+              content/ja/blog/*|public/images/blog/*) ;;
+              *) echo "Unexpected working-tree path: $path" >&2; exit 1 ;;
+            esac
+          done < <(git -C "$target" status --porcelain -z --untracked-files=all)
+          for path in content/ja/blog public/images/blog; do
+            if test -n "$(git -C "$target" status --porcelain --untracked-files=all -- "$path")"; then
+              git -C "$target" add -A -- "$path"
+            fi
+          done
+          git -C "$target" diff --cached --check
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              content/ja/blog/*|public/images/blog/*) ;;
+              *) echo "Unexpected generated path: $path" >&2; exit 1 ;;
+            esac
+          done < <(git -C "$target" diff --cached --name-only -z)
+          if git -C "$target" diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git -C "$target" -c user.name='zenn-portfolio-sync[bot]' -c user.email='sync@users.noreply.github.com' commit -m "sync: import published Zenn articles from ${GITHUB_SHA:0:12}"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+      - name: Create Portfolio-only GitHub App token
+        if: steps.prepare.outputs.changed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ vars.ZENN_PORTFOLIO_APP_ID }}
+          private-key: ${{ secrets.ZENN_PORTFOLIO_APP_PRIVATE_KEY }}
+          owner: ttokunaga-ja
+          repositories: portfolio
+          permission-contents: write
+      - name: Push generated content if both main branches are unchanged
+        if: steps.prepare.outputs.changed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BASE_SHA: ${{ steps.prepare.outputs.base }}
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/portfolio"
+          source_latest=$(git ls-remote origin refs/heads/main | cut -f1)
+          test "$(git rev-parse HEAD)" = "$source_latest" || { echo 'Source main advanced; refusing stale synchronization.' >&2; exit 1; }
+          target_latest=$(git -C "$target" ls-remote origin refs/heads/main | cut -f1)
+          test "$BASE_SHA" = "$target_latest" || { echo 'Portfolio main advanced; a later run will reconcile.' >&2; exit 1; }
+          gh auth setup-git
+          git -C "$target" push origin HEAD:main
