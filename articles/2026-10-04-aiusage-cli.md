@@ -1,5 +1,5 @@
 ---
-title: "Claude Code・Codexの利用量をCSVで集計するCLI「aiUsage」を作りました"
+title: "Claude Code・Codexの利用量をCSVで集計するCLI「aiUsage」を作った"
 emoji: "📊"
 type: "tech"
 topics: ["claude", "codex", "rust", "cli", "ai"]
