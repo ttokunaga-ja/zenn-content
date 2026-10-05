@@ -3,7 +3,7 @@ title: "Claude Code・Codexの利用量をCSVで集計するCLI「aiUsage」を�
 emoji: "📊"
 type: "tech"
 topics: ["claude", "codex", "rust", "cli", "ai"]
-published: false
+published: true
 ---
 
 Claude CodeやCodexを使っていて、「今月はどのモデルを、どれくらい使ったのか」を確認したくなったことはありませんか。
