@@ -20,30 +20,37 @@ https://github.com/ttokunaga-ja/claudeHistory
 
 ## インストール
 
-[GitHub Releases](https://github.com/ttokunaga-ja/claudeHistory/releases/latest)から、使っているOSのファイルをダウンロードしてください。
+OSに合うコマンドを1回実行します。ダウンロードとインストールを自動で行うので、ターミナルを開いたフォルダーのままで実行できます。管理者権限は必要ありません。
 
 ### macOS（Apple Silicon）
 
-`claudeHistory-macos-arm64.tar.gz`をダウンロードし、ターミナルでダウンロード先を開いて実行します。
+ターミナルで次のコマンドを実行します。
 
 ```sh
-tar -xzf claudeHistory-macos-arm64.tar.gz
-sh claudeHistory-macos-arm64/install.sh
+curl -fsSL https://raw.githubusercontent.com/ttokunaga-ja/claudeHistory/main/install.sh | sh
 ```
 
-`~/.local/bin`にインストールされます。このフォルダーをPATHに追加しておくと、`claudeHistory`だけで実行できます。
+`~/.local/bin`にインストールされ、PATHも設定されます。**新しいターミナルを開いてから**使ってください。
 
 ### Windows（x64）
 
-`claudeHistory-windows-x64.zip`をダウンロードし、PowerShellでダウンロード先を開いて実行します。
+PowerShellで次のコマンドを実行します。
 
 ```powershell
-Expand-Archive .\claudeHistory-windows-x64.zip -DestinationPath .\claudeHistory-package
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\claudeHistory-package\claudeHistory-windows-x64\install.ps1
-& "$env:USERPROFILE\.local\bin\claudeHistory.exe" --version
+irm https://raw.githubusercontent.com/ttokunaga-ja/claudeHistory/main/install.ps1 | iex
 ```
 
-`%USERPROFILE%\.local\bin`にインストールされます。Windowsの「環境変数」で、このフォルダーをユーザーのPATHに追加し、ターミナルを開き直してください。追加しない場合は、上の最後の行のように実行ファイルのパスを指定して使えます。
+`%USERPROFILE%\.local\bin`にインストールされ、PATHも設定されます。そのまま同じPowerShellで使えます。
+
+### インストールの確認
+
+どちらのOSでも、次のコマンドで版が表示されればインストール完了です。
+
+```sh
+claudeHistory --version
+```
+
+最新版へ更新するときも、同じインストールコマンドを使えます。手動でファイルを取得したい場合は[GitHub Releases](https://github.com/ttokunaga-ja/claudeHistory/releases/latest)を利用してください。
 
 ## 引き継ぎの手順
 
