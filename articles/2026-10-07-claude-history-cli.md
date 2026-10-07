@@ -50,7 +50,25 @@ irm https://raw.githubusercontent.com/ttokunaga-ja/claudeHistory/main/install.ps
 claudeHistory --version
 ```
 
-最新版へ更新するときも、同じインストールコマンドを使えます。手動でファイルを取得したい場合は[GitHub Releases](https://github.com/ttokunaga-ja/claudeHistory/releases/latest)を利用してください。
+v0.3.0以前から更新する場合は、最初の1回だけ同じインストールコマンドを再実行してください。手動でファイルを取得したい場合は[GitHub Releases](https://github.com/ttokunaga-ja/claudeHistory/releases/latest)を利用してください。
+
+## 更新・アンインストール
+
+最新版への更新は、次のコマンドで行えます。
+
+```sh
+claudeHistory update
+```
+
+このCLIが不要になったら、次のコマンドを実行します。
+
+```sh
+claudeHistory uninstall
+```
+
+削除対象のパスが表示されるので、確認して`y`を入力します。Enterだけなら中止します。削除するのはclaudeHistory本体だけで、Claudeの履歴や設定、アカウント登録、バックアップは残ります。
+
+Windowsでは終了後に削除されます。表示された結果の記録で`deleted`になれば完了です。
 
 ## 初回のアカウント設定
 
