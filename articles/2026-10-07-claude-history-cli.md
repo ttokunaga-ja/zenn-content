@@ -66,7 +66,7 @@ claudeHistory update
 claudeHistory uninstall
 ```
 
-削除対象のパスが表示されるので、確認して`y`を入力します。Enterだけなら中止します。削除するのはclaudeHistory本体だけで、Claudeの履歴や設定、アカウント登録、バックアップは残ります。
+削除対象のパスが表示されるので、確認して`y`を入力します。Enterだけなら中止します。claudeHistory本体と専用フォルダー`~/.claude-history`を削除します。このツールに登録したメールアドレス・組織名と復旧用バックアップも削除されます。Claude本体の履歴・設定・認証情報には触れません。
 
 Windowsでは終了後に削除されます。表示された結果の記録で`deleted`になれば完了です。
 
