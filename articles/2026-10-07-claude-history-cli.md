@@ -52,6 +52,32 @@ claudeHistory --version
 
 v0.3.0以前から更新する場合は、最初の1回だけ同じインストールコマンドを再実行してください。手動でファイルを取得したい場合は[GitHub Releases](https://github.com/ttokunaga-ja/claudeHistory/releases/latest)を利用してください。
 
+## バージョン・使い方・状態を確認する
+
+インストール済みのバージョンは、次のコマンドで確認できます。
+
+```sh
+claudeHistory --version
+```
+
+短い書き方は`claudeHistory -V`です。`claudeHistory version`というサブコマンドはないので、`--version`を使ってください。
+
+コマンド一覧やオプションを確認するには、ヘルプを表示します。
+
+```sh
+claudeHistory --help
+claudeHistory sync --help
+```
+
+`--help`は`-h`でも指定できます。2行目のようにコマンド名の後に付けると、そのコマンドの使い方を確認できます。
+
+同期前にClaudeの起動・作業状態や、保存済みアカウント・組織の履歴件数を確認する場合は、次のコマンドを使います。どちらも履歴を変更しません。
+
+```sh
+claudeHistory status
+claudeHistory accounts
+```
+
 ## 更新・アンインストール
 
 最新版への更新は、次のコマンドで行えます。
