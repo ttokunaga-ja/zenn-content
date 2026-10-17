@@ -3,7 +3,7 @@ title: "Claude DesktopのCode履歴をアカウント間で同期するCLI「cla
 emoji: "📚"
 type: "tech"
 topics: ["claude", "rust", "cli", "windows", "macos"]
-published: false
+published: true
 ---
 
 Claude Desktopでアカウントを切り替えたところ、Codeの会話が新しいアカウントの一覧に表示されなくなりました。

@@ -3,7 +3,7 @@ title: "Claude Code・Codexの古い会話をゴミ箱へ移すCLI「aiClean」�
 emoji: "🧹"
 type: "tech"
 topics: ["claude", "codex", "rust", "cli", "ai"]
-published: false
+published: true
 ---
 
 Claude CodeやCodexの会話ログは増えていきます。保存フォルダの日付で削除すると、最近再開した会話まで消すかもしれません。
