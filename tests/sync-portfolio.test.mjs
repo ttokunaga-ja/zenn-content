@@ -42,7 +42,7 @@ async function fixture(t) {
   execFileSync("git", ["add", "."], { cwd: target });
   execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "-c", "core.hooksPath=/dev/null", "commit", "-m", "fixture"], { cwd: target });
   const run = (script = "sync-portfolio.mjs", options = []) =>
-    spawnSync(process.execPath, [join(source, "scripts", script), "--no-commit", ...options], { encoding: "utf8" });
+    spawnSync(process.execPath, [join(source, "scripts", script), ...(script === "sync-portfolio.mjs" ? [`--source-root=${source}`, `--portfolio-root=${target}`] : []), ...options], { encoding: "utf8" });
   return { source, target, run };
 }
 
@@ -65,7 +65,7 @@ test("missing image stops before removing existing output", async (t) => {
   assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
 });
 
-test("local sync restores published article and image without staging or committing", async (t) => {
+test("generation restores published article and image without staging, committing, or pushing", async (t) => {
   const { source, target, run } = await fixture(t);
   await mkdir(join(source, "images"));
   await writeFile(join(source, "images/a.png"), "new image");
@@ -86,7 +86,7 @@ test("explicit checkouts produce the established frontmatter, body, and image by
   await mkdir(join(source, "images"));
   await writeFile(join(source, "images/a.png"), Buffer.from([0, 1, 2, 255]));
   await writeFile(join(source, "articles/a.md"), article("published: true", "Alpha\n![image](/images/a.png)\nOmega"));
-  const result = run("sync-portfolio.mjs", [`--source-root=${source}`, `--portfolio-root=${target}`]);
+  const result = run();
   assert.equal(result.status, 0, result.stderr);
   assert.equal(await readFile(join(target, "content/ja/blog/a.md"), "utf8"),
     '---\ntitle: "Test"\nabstract: "Alpha Omega"\npublishedAt: ""\ncanonicalUrl: "https://zenn.dev/t_tokunaga/articles/a"\ntags:\n  - "test"\n---\nAlpha\n![image](/images/blog/a/a.png)\nOmega\n');
@@ -111,10 +111,10 @@ test("unsafe article and image paths stop before removing existing output", asyn
 });
 
 test("overlapping or descendant target root cannot remove generated output", async (t) => {
-  const { source, target, run } = await fixture(t);
-  assert.equal(run("sync-portfolio.mjs", [`--portfolio-root=${source}`]).status, 1);
+  const { source, target } = await fixture(t);
+  assert.equal(spawnSync(process.execPath, [join(source, "scripts/sync-portfolio.mjs"), `--source-root=${source}`, `--portfolio-root=${source}`], { encoding: "utf8" }).status, 1);
   await mkdir(join(target, "nested"));
-  assert.equal(run("sync-portfolio.mjs", [`--portfolio-root=${join(target, "nested")}`]).status, 1);
+  assert.equal(spawnSync(process.execPath, [join(source, "scripts/sync-portfolio.mjs"), `--source-root=${source}`, `--portfolio-root=${join(target, "nested")}`], { encoding: "utf8" }).status, 1);
   assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
 });
 
@@ -156,9 +156,9 @@ test("updates and unpublishing remove stale Japanese output while preserving Eng
   commitGenerated();
   await rm(join(source, "articles/a.md"));
   const before = execFileSync("git", ["rev-parse", "HEAD"], { cwd: target, encoding: "utf8" });
-  const result = spawnSync(process.execPath, [join(source, "scripts/sync-portfolio.mjs"), "--no-push"], { encoding: "utf8" });
+  const result = run();
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /差分はありません/);
+  assert.match(result.stdout, /生成を完了/);
   assert.equal(execFileSync("git", ["rev-parse", "HEAD"], { cwd: target, encoding: "utf8" }), before);
   assert.equal(await readFile(join(target, "content/en/blog/a.md"), "utf8"), "English sentinel");
   assert.equal(await readFile(join(target, "translations/blog-en-state.json"), "utf8"), "state sentinel");
@@ -170,4 +170,33 @@ test("unrelated staged work blocks synchronization", async (t) => {
   execFileSync("git", ["add", "unrelated.txt"], { cwd: target });
   assert.equal(run().status, 1);
   assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
+});
+
+test("explicit absolute roots are required and retired flags are rejected before mutation", async (t) => {
+  const { source, target } = await fixture(t);
+  await writeFile(join(source, "articles/a.md"), article("published: true"));
+  const roots = [`--source-root=${source}`, `--portfolio-root=${target}`];
+  const before = execFileSync("git", ["rev-parse", "HEAD"], { cwd: target, encoding: "utf8" });
+  const invalidOptions = [
+    [],
+    [roots[0]],
+    [roots[1]],
+    ["--source-root=relative", roots[1]],
+    [roots[0], "--portfolio-root=relative"],
+    ...["--no-commit", "--no-push", "--no-commit=true", "--no-push=true"].map((flag) => [...roots, flag])
+  ];
+  for (const options of invalidOptions) {
+    const result = spawnSync(process.execPath, [join(source, "scripts/sync-portfolio.mjs"), ...options], { encoding: "utf8" });
+    assert.equal(result.status, 1, `must reject ${JSON.stringify(options)}`);
+    assert.match(result.stderr, /絶対パス|不明なオプション/);
+    assert.equal(await readFile(join(target, "content/ja/blog/old.md"), "utf8"), "existing article");
+    assert.equal(await readFile(join(target, "public/images/blog/old.png"), "utf8"), "existing image");
+    assert.equal(execFileSync("git", ["status", "--porcelain"], { cwd: target, encoding: "utf8" }), "");
+    assert.equal(execFileSync("git", ["rev-parse", "HEAD"], { cwd: target, encoding: "utf8" }), before);
+  }
+});
+
+test("generator contains no Git publication commands", async () => {
+  const script = await readFile(new URL("../scripts/sync-portfolio.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(script, /run\("git", \["(?:add|commit|push)"/);
 });

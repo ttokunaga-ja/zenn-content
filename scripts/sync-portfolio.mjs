@@ -1,28 +1,29 @@
 import { cp, lstat, mkdir, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { parseZennFrontmatter } from "./zenn-frontmatter.mjs";
 
-function option(name, fallback) {
+function option(name) {
   const prefix = `${name}=`;
   const values = process.argv.slice(2).filter((arg) => arg.startsWith(prefix));
   if (values.length > 1) throw new Error(`${name} は一度だけ指定してください。`);
   const value = values[0]?.slice(prefix.length);
-  if (value !== undefined && (!value || !isAbsolute(value))) throw new Error(`${name} には絶対パスを指定してください。`);
-  return value ? resolve(value) : fallback;
+  if (!value || !isAbsolute(value)) throw new Error(`${name} には絶対パスを指定してください。`);
+  return resolve(value);
 }
 
-const defaultZennRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const zennRoot = option("--source-root", defaultZennRoot);
-const portfolioRoot = option("--portfolio-root", join(dirname(zennRoot), "portfolio"));
+for (const arg of process.argv.slice(2)) {
+  if (!arg.startsWith("--source-root=") && !arg.startsWith("--portfolio-root=")) {
+    throw new Error(`不明なオプション: ${arg}`);
+  }
+}
+const zennRoot = option("--source-root");
+const portfolioRoot = option("--portfolio-root");
 const articlesRoot = join(zennRoot, "articles");
 const sourceImagesRoot = join(zennRoot, "images");
 const targetArticlesRoot = join(portfolioRoot, "content", "ja", "blog");
 const targetImagesRoot = join(portfolioRoot, "public", "images", "blog");
 const zennProfile = "t_tokunaga";
-const skipPush = process.argv.includes("--no-push");
-const skipCommit = process.argv.includes("--no-commit");
 
 function run(command, args, cwd) {
   return execFileSync(command, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -40,21 +41,13 @@ function hasStagedChanges() {
 
 function assertCleanPortfolioTargets() {
   if (hasStagedChanges()) {
-    throw new Error("Portfolio にステージ済みの変更があります。同期コミットへの混入を防ぐため停止します。");
+    throw new Error("Portfolio にステージ済みの変更があります。作業内容を保護するため停止します。");
   }
   const status = run("git", ["status", "--porcelain", "--", "content/ja/blog", "public/images/blog"], portfolioRoot);
   if (status) {
     throw new Error(
-      "Portfolio のブログ同期先に未コミット変更があります。内容を確認して commit または退避してから再度 push してください。"
+      "Portfolio のブログ同期先に未コミット変更があります。内容を確認して commit または退避してから再度生成してください。"
     );
-  }
-}
-
-function stageChangedTargets() {
-  for (const path of ["content/ja/blog", "public/images/blog"]) {
-    if (run("git", ["status", "--porcelain", "--untracked-files=all", "--", path], portfolioRoot)) {
-      run("git", ["add", "-A", "--", path], portfolioRoot);
-    }
   }
 }
 
@@ -174,12 +167,6 @@ async function syncArticle(fileName, article) {
 }
 
 async function main() {
-  const known = ["--no-push", "--no-commit"];
-  for (const arg of process.argv.slice(2)) {
-    if (!known.includes(arg) && !arg.startsWith("--source-root=") && !arg.startsWith("--portfolio-root=")) {
-      throw new Error(`不明なオプション: ${arg}`);
-    }
-  }
   if (!(await exists(portfolioRoot))) throw new Error(`Portfolio リポジトリが見つかりません: ${portfolioRoot}`);
   const sourceReal = await realpath(zennRoot);
   const targetReal = await realpath(portfolioRoot);
@@ -222,23 +209,7 @@ async function main() {
     await syncArticle(file, articles.get(file));
   }
 
-  if (skipCommit) {
-    console.log("Portfolio: ローカル同期を完了しました（--no-commit、commit/pushなし）。");
-    return;
-  }
-  stageChangedTargets();
-  if (!hasStagedChanges()) {
-    console.log("Portfolio: Zenn記事の差分はありません。");
-    return;
-  }
-
-  run("git", ["commit", "-m", "sync: import published Zenn articles"], portfolioRoot);
-  if (skipPush) {
-    console.log("Portfolio: 同期コミットを作成しました（--no-push）。");
-    return;
-  }
-  run("git", ["push", "origin", "main"], portfolioRoot);
-  console.log("Portfolio: Zenn記事を同期して main へ push しました。");
+  console.log("Portfolio: Zenn記事と画像の生成を完了しました。");
 }
 
 main().catch((error) => {

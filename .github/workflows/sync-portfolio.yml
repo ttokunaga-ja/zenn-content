@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           target="$RUNNER_TEMP/portfolio"
           git clone --quiet --depth=1 --branch=main https://github.com/ttokunaga-ja/portfolio.git "$target"
-          node scripts/sync-portfolio.mjs --source-root="$GITHUB_WORKSPACE" --portfolio-root="$target" --no-commit
+          node scripts/sync-portfolio.mjs --source-root="$GITHUB_WORKSPACE" --portfolio-root="$target"
           while IFS= read -r -d '' entry; do
             path="${entry:3}"
             case "$path" in
@@ -97,7 +97,7 @@ jobs:
           target="$RUNNER_TEMP/portfolio"
           git clone --quiet --depth=1 --branch=main https://github.com/ttokunaga-ja/portfolio.git "$target"
           base=$(git -C "$target" rev-parse HEAD)
-          node scripts/sync-portfolio.mjs --source-root="$GITHUB_WORKSPACE" --portfolio-root="$target" --no-commit
+          node scripts/sync-portfolio.mjs --source-root="$GITHUB_WORKSPACE" --portfolio-root="$target"
           while IFS= read -r -d '' entry; do
             path="${entry:3}"
             case "$path" in

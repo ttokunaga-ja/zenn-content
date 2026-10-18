@@ -27,26 +27,23 @@ The pre-push hook runs read-only Markdown validation and offline tests on `main`
 It never generates content, commits, or pushes to Portfolio. GitHub Actions mirrors
 published Zenn articles and their referenced images into Portfolio after a source
 push, so publication does not depend on a local sibling checkout.
-Local previews stop if Portfolio's generated blog folders contain uncommitted
-changes, so hand-edited content is not overwritten silently.
+The normal publication workflow is to edit articles or images, validate them, and
+push the source changes to Zenn `main`. Actions generates and publishes the
+Portfolio content; no local Portfolio checkout or synchronization command is
+needed.
 
 Every article must explicitly set `published: true` or `published: false`.
 Invalid frontmatter or missing referenced images stop synchronization before
-existing Portfolio content is removed. Staged Portfolio changes also stop the
-sync so unrelated work cannot enter the generated commit.
+existing Portfolio content is removed. The generator also rejects staged changes,
+dirty managed folders, unsafe paths, and symlinks in a supplied Portfolio checkout.
 
-For local generation and validation without committing or pushing:
+The generator only writes Markdown and image files. It requires explicit absolute
+`--source-root` and `--portfolio-root` paths, has no default sibling targets, and
+never stages, commits, or pushes. The workflow owns Git publication. Offline
+fixture tests exercise generation in temporary checkouts:
 
 ```bash
-node scripts/sync-portfolio.mjs --no-commit
 node --test tests/*.test.mjs
-```
-
-CI or a separate checkout can pass explicit absolute paths while preserving the
-same generated Markdown and image bytes:
-
-```bash
-node scripts/sync-portfolio.mjs --source-root=/absolute/path/to/zenn-content --portfolio-root=/absolute/path/to/portfolio --no-commit
 ```
 
 ### GitHub Actions publication
@@ -58,7 +55,7 @@ App `zenn-portfolio-sync-ttokunaga-ja` (ID `5171935`) is installed only on Portf
 the source repository variable `ZENN_PORTFOLIO_SYNC_ENABLED` is `true`.
 
 `.github/workflows/sync-portfolio.yml` runs on relevant `main` changes, manual
-dispatch, and a daily reconciliation schedule. Pushes always run local tests;
+dispatch, and a daily reconciliation schedule. Pushes always run offline tests;
 cross-repository publishing stays inactive until the Zenn repository variable
 `ZENN_PORTFOLIO_SYNC_ENABLED` is set to `true`. The workflow
 validates a clean Portfolio checkout without credentials, repeats generation
@@ -83,14 +80,9 @@ For a new installation, the repository owner should:
    the private key into issues, commits, chat, or Portfolio settings.
 4. After reviewing the Zenn `main` publication scope, set the Zenn Actions
    variable `ZENN_PORTFOLIO_SYNC_ENABLED=true` and run **Sync published Zenn
-   articles to Portfolio** with `workflow_dispatch`. If the current articles
-   were already synchronized by the local pre-push hook, this run will correctly
-   show no diff. An approved later article or image change is needed to verify
-   the App's actual write path. After the App is configured, preview that update
-   locally with `--no-commit`, arrange one source push without the local
-   publishing hook, then check its generated diff, Portfolio deployment, and
-   live Japanese article and image
-   before changing the hook permanently.
+   articles to Portfolio** with `workflow_dispatch`. A no-diff run skips
+   publication. For an approved source change, check the workflow's generated
+   diff, Portfolio deployment, and live Japanese article and images.
 
 The App token is scoped to the `portfolio` repository, not to file paths. The
 workflow checks that the generated diff stays inside the two managed folders
@@ -100,5 +92,5 @@ Gemini credentials, translation state, and Cloudflare credentials stay in
 Portfolio. Translation calls remain controlled by Portfolio's separate
 `BLOG_TRANSLATION_ENABLED` setting.
 
-The local publishing hook has been retired. Keep `--no-commit` previews for local
-validation. Do not reintroduce automatic local cross-repository pushes.
+The local hook is validation-only. All Portfolio synchronization and publication
+run through GitHub Actions.
