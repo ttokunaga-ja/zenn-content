@@ -3,7 +3,7 @@ title: "AIが回答したなら、企業の約束ではなくなるのか――A
 emoji: "🧭"
 type: "idea"
 topics: ["ai", "llm", "カスタマーサポート", "説明責任"]
-published: false
+published: true
 ---
 
 2026年10月、Amazonで注文した商品が「配達完了」になっているのに、手元にありませんでした。
