@@ -10,6 +10,15 @@ published: false
 
 2026年10月のCodexとClaude Codeの利用量を集計しました。Codexの確認できた利用量は **1,165億3,252万7,622トークン**、Claude Codeの保存ログは **107億9,731万6,127トークン**、Claude CodeのAPI参考換算は **\$3,452.49** です。
 
+## 🤖 AI利用構成
+
+| サービス | サブスク支出 |
+| --- | ---: |
+| ChatGPT Pro 20X | 30,000円 |
+| ChatGPT Plus | 3,000円 |
+| Claude Pro（iOS） | 3,000円 |
+| **合計** | **36,000円** |
+
 ## 集計方法
 
 [AI Usage](https://github.com/ttokunaga-ja/aiUsage)で集計しました。Codexは公式APIの日別総量と残存ログを集計し、重複する記録を1回だけ数えました。モデル別・入出力別の構成には保存ログを使っています。Claude Codeは保存ログから集計しました。CodexはUTC、Claude Codeは日本時間で10月1日から11月1日までを対象にしています。
