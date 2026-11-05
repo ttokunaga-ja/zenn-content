@@ -105,15 +105,23 @@ Codexの確認できた利用量は **116,532,527,622トークン** です。残
 
 ## 📰 2026年10月のAIニュースと所感
 
-### GPT-6.1 TerraがCodexに登場
+### 1位：CodexとChatGPT Workのキャッシュを永久保持
+
+10月21日、OpenAIのTiboは、ログインして利用するCodexとChatGPT Workではキャッシュを永久に保持し、古い会話や数時間後の再開でもキャッシュを利用できると説明しました。長時間の作業を再開しやすくなる変更です。([Tiboの投稿](https://x.com/thsottiaux/status/2112712984644784534))
+
+### 2位：Tiboの28日間チャレンジが終了
+
+Tiboが10月5日から続けた28日間のチャレンジは、11月1日に終了しました。CodexやChatGPT Workに関係する改善、または利用枠のリセットを毎日届ける取り組みでした。([チャレンジの記録](https://whenresets.cc/codex-28-days/))
+
+### 3位：GPT-6.1 TerraがCodexに登場
 
 10月26日にGPT-6.1 Terraが公開され、Codexでも利用できるようになりました。画像の理解や画面操作に対応し、今回の集計でも利用が記録されています。([OpenAIの更新履歴](https://developers.openai.com/api/docs/changelog)、[ChatGPTの更新情報](https://learn.chatgpt.com/docs/whats-new/october-26-30-2026))
 
-### Claude Haiku 5.5が公開
+### 4位：Claude Haiku 5.5が公開
 
 Anthropicは10月7日にClaude Haiku 5.5を公開しました。小型モデルの選択肢が増え、大量の処理やサブエージェントに合わせてモデルを選びやすくなりました。([Anthropicのモデル発表一覧](https://www.anthropic.com/news/models))
 
-### GPT-6.1 SolにUltrafastモード
+### 5位：GPT-6.1 SolにUltrafastモード
 
 10月5日〜9日の更新で、CodexとChatGPT WorkのGPT-6.1 SolにUltrafastモードが追加されました。利用できるプランには条件があります。([ChatGPTの更新情報](https://learn.chatgpt.com/docs/whats-new/october-5-9-2026))
 
